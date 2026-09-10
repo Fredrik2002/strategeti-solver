@@ -28,8 +28,26 @@ class Piece(ABC):
         self.x = x
         self.y = y
 
+    def get_coords(self):
+        return self.x, self.y
+
     @abstractmethod
-    def legal_moves(self, board : list[list[str]]):
+    def get_legal_moves(self, board : list[list[str]]):
+        pass
+
+    def make_move(self, board : list[list[str]], move : tuple[str, int , int, None]):
+        move_name, x, y, _ = move
+        board[x][y] = self
+
+        # We clear the previous position
+        if move_name == "M":
+            board[self.x][self.y] = ""
+
+        self.x, self.y = x, y
+
+        self.custom_make_move()
+
+    def custom_make_move(self):
         pass
 
     def __str__(self):
@@ -37,3 +55,9 @@ class Piece(ABC):
 
     def __repr__(self):
         return self.__str__()
+
+    def __eq__(self, other):
+        return other.__class__ == self.__class__
+
+    def __hash__(self):
+        return 0

@@ -1,4 +1,4 @@
-from Piece import Piece
+from Pieces.Piece import Piece
 
 
 class Gazelle(Piece):
@@ -6,8 +6,8 @@ class Gazelle(Piece):
     def __init__(self, white_color):
         super().__init__("G", white_color)
 
-    def legal_moves(self, board : list[list[str]]):
-        list_legal_moves = [("M", self.x, self.y)]
+    def get_legal_moves(self, board : list[list[str]]):
+        list_legal_moves = [("M", self.x, self.y, self)]
         position_stack = [(self.x, self.y)]
         while len(position_stack) > 0:
             x, y = position_stack.pop()
@@ -27,10 +27,16 @@ class Gazelle(Piece):
                     if board[x + x_offset * coeff][y + y_offset * coeff] not in ['', self]:
                         # Bigger jump possible
                         possible_jump.append((x_offset, y_offset, coeff + 1))
-                    elif ("M", x + x_offset * coeff, y + y_offset * coeff) not in list_legal_moves:
+                    elif ("M", x + x_offset * coeff, y + y_offset * coeff, self) not in list_legal_moves:
                         position_stack.append((x + x_offset * coeff, y + y_offset * coeff))
-                        list_legal_moves.append(("M", x + x_offset * coeff, y + y_offset * coeff))
+                        list_legal_moves.append(("M", x + x_offset * coeff, y + y_offset * coeff, self))
 
 
         list_legal_moves.pop(0)
         return list_legal_moves
+
+    def __eq__(self, other):
+        return self.__class__ == other.__class__ and self.get_coords() == other.get_coords()
+
+    def __hash__(self):
+        return 0
