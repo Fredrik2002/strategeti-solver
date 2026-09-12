@@ -15,6 +15,7 @@ class Piece(ABC):
         self.y = -1
 
         self.white_color = white_color
+        self.id = id(self)
 
 
     '''
@@ -57,7 +58,7 @@ class Piece(ABC):
         return self.__str__()
 
     def __eq__(self, other):
-        return other.__class__ == self.__class__
+        return other.__class__ == self.__class__ and other.id == self.id
 
     def __hash__(self):
-        return 0
+        return self.id

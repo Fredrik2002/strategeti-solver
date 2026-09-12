@@ -1,6 +1,6 @@
-import random
 import json
-from Player import Player
+from json import JSONDecodeError
+import traceback
 from PositionStorage import PositionStorage
 from Strategeti import Strategeti
 import os
@@ -9,13 +9,20 @@ storage = PositionStorage()
 
 if os.path.exists("database.json"):
     with open("database.json") as f:
-        database = json.loads(f)
-        storage.set_database(database)
+        try:
+            database = json.loads(f.read())
+            storage.set_database(database)
+        except TypeError as e:
+            print(e)
+        except JSONDecodeError as e:
+            print(e)
 
-game = Strategeti(storage.get_database())
+game = Strategeti()
+game.set_database(storage)
 
 try :
     game.play()
-except KeyboardInterrupt:
+except Exception as e:
+    print(traceback.format_exc())
     print("Database saved successfully")
     storage.save_database()

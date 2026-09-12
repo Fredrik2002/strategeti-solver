@@ -1,5 +1,6 @@
+import copy
 import random
-
+import Strategeti
 from Pieces.Elephant import Elephant
 from Pieces.Gazelle import Gazelle
 from Pieces.Lion import Lion
@@ -27,7 +28,7 @@ class Player:
 
     def get_legal_moves(self, board):
         list_possible_moves = []
-        for piece in set(self.pieces_to_be_placed):
+        for piece in self.piece_set():
             for x in range(4):
                 for y in range(4):
                     if (x not in [0, 3] or y not in [0, 3]) and board[x][y] == '':
@@ -38,25 +39,29 @@ class Player:
 
         return list_possible_moves
 
-    def _choose_move(self, board):
+    def piece_set(self):
         """
-        For now, the chosen move is random
-
-        :return: The selected move from self.get_legal_moves()
+        :return: a list without duplicate of the pieces_to_be_placed list
         """
-        return random.choice(self.get_legal_moves(board))
+        result = []
+        for piece in self.pieces_to_be_placed:
+            if not any(piece.__class__ == p.__class__ for p in result):
+                result.append(piece)
+        return result
 
-    def make_move(self, board):
-        # 2. We choose a move
-        move = self._choose_move(board)
-        print(move)
+    def make_move(self, game):
+        for move in self.get_legal_moves(game.get_board()):
+            tmp_game = copy.deepcopy(game)
+            tmp_game.set_database(game.get_database())
 
-        # 3. We make on the board the move we chose
-        piece = move[-1]
-        if move[0] == "Place":
-            self.pieces_placed.append(move[-1])
-            self.pieces_to_be_placed.remove(move[-1])
-        piece.make_move(board, move)
+            print(f"List of moves : {self.get_legal_moves(game.get_board())}")
+            print(f"Selected move : {move}")
+            tmp_game.make_move_on_board(move)
+
+            # We keep the game going
+            tmp_game.play()
+
+
 
     def update_pieces(self):
         newly_captured = [piece for piece in self.pieces_placed if piece.is_captured]

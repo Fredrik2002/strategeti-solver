@@ -2,17 +2,18 @@ import random
 
 from Pieces.Piece import Piece
 import Player
+from PositionStorage import PositionStorage
 
 
 class Strategeti:
-    def __init__(self, database):
+    def __init__(self):
         self.board = [['' for _ in range(4)] for _ in range(4)]
         self.position_set = {}
-        self.player1 = Player.Player(True, database)
-        self.player2 = Player.Player(False, database)
+        self.database = {}
+        self.player1 = Player.Player(True, self.database)
+        self.player2 = Player.Player(False, self.database)
         self.draw = False
         self.white_to_move = True
-        self.database = database
 
     def put_piece(self, x, y, piece : Piece):
         self.board[x][y] = piece
@@ -44,36 +45,19 @@ class Strategeti:
         print()
 
     def play(self):
-        while True:
-            self.player1.update_pieces()
-            self.player2.update_pieces()
+        self.player1.update_pieces()
+        self.player2.update_pieces()
 
-            if self.check_winner():
-                break
+        self.show_board()
 
-            self.show_board()
-            print(self.player1.get_legal_moves(self.board))
-            if len(self.player1.get_legal_moves(self.board)) > 0:
-                self.make_move(self.player1)
-                self.white_to_move = False
-            else:
-                print("Black won : White out of moves")
-                break
+        if self.check_winner():
+            return True
 
-            self.player1.update_pieces()
-            self.player2.update_pieces()
+        if self.white_to_move:
+            self.make_move(self.player1)
+        else:
+            self.make_move(self.player2)
 
-            if self.check_winner():
-                break
-
-            self.show_board()
-            print(self.player2.get_legal_moves(self.board))
-            if len(self.player2.get_legal_moves(self.board)) > 0:
-                self.make_move(self.player2)
-                self.white_to_move = True
-            else:
-                print("White won : Black out of moves")
-                break
 
     def check_winner(self):
         """
@@ -81,19 +65,32 @@ class Strategeti:
 
         :return: True if the game is finished (White won, Black won, or draw), False otherwise
         """
-        if len(self.player1.pieces_captured) == 5:
+        finished = True
+        evaluation = None
+        if len(self.player2.get_legal_moves(self.board)) == 0:
+            print("White won : Black out of moves")
+            evaluation = "White"
+        elif len(self.player1.get_legal_moves(self.board)) == 0:
+            print("Black won : White out of moves")
+            evaluation = "Black"
+        elif len(self.player1.pieces_captured) == 5:
             print("Black won : 5 captures")
+            evaluation = "Black"
         elif len(self.player2.pieces_captured) == 5:
             print("White won : 5 captures")
+            evaluation = "White"
         elif self.draw:
             print(self.get_FEN_board())
             print("Draw : 3 times repetition")
         else:
-            return False
-        return True
+            finished = False
+        if finished:
+            self.database.save_state(self.get_FEN_board(), finished, evaluation)
+        return finished
 
     def make_move(self, player):
-        player.make_move(self.board)
+        player.make_move(self)
+
         new_position = self.get_FEN_board()[:-1]
         if new_position not in self.position_set:
             self.position_set[new_position] = 1
@@ -102,6 +99,16 @@ class Strategeti:
             # If the position repeats 3 times, the game is declared draw
             if self.position_set[new_position] == 3:
                 self.draw = True
+
+    def make_move_on_board(self, move):
+        player = self.player1 if self.white_to_move else self.player2
+        piece = move[-1]
+        if move[0] == "Place":
+            player.pieces_placed.append(move[-1])
+            player.pieces_to_be_placed.remove(move[-1])
+        piece.make_move(self.get_board(), move)
+
+        self.white_to_move = not self.white_to_move
 
     def get_FEN_board(self):
         """
@@ -140,6 +147,14 @@ class Strategeti:
 
     def get_board(self):
         return self.board
+
+    def set_database(self, database):
+        self.database = database
+        self.player1.database = database
+        self.player2.database = database
+
+    def get_database(self):
+        return self.database
 
 if __name__ == '__main__':
     main = Strategeti()

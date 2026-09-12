@@ -20,7 +20,12 @@ class Position:
 
 class PositionStorage:
     def __init__(self):
+        # Key : FEN position
+        # Value : (finished, evaluation)
         self.positions = {}
+
+    def save_state(self, fen, finished, evaluation):
+        self.positions[fen] = (finished, evaluation)
 
     def set_database(self, database):
         self.positions = database
@@ -30,4 +35,16 @@ class PositionStorage:
 
     def save_database(self):
         with open('database.json', 'w') as f:
-            json.dump(self.positions, f)
+            f.write("{\n")
+
+            for i, (key, value) in enumerate(self.positions.items()):
+                json.dump(key, f)
+                f.write(": ")
+                json.dump(value, f)
+
+                if i < len(self.positions) - 1:
+                    f.write(",")
+
+                f.write("\n")
+
+            f.write("}\n")

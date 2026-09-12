@@ -1,9 +1,16 @@
+import sys
+
+print(sys.path)
+
 from Pieces.Elephant import Elephant
 from Pieces.Gazelle import Gazelle
 from Pieces.Lion import Lion
 from Strategeti import Strategeti
 from Pieces.Zebra import Zebra
 
+import sys
+
+sys.path.append("C:\\Users\\calve\\Documents\\Programming\\Python\\Strategeti")
 game = Strategeti()
 gazelle = Gazelle(True)
 
