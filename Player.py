@@ -8,18 +8,18 @@ from Pieces.Zebra import Zebra
 
 
 class Player:
-    def __init__(self, white_color):
+    def __init__(self, white_color, database):
         self.white_color = white_color
-
+        self.database = database
         self.pieces_to_be_placed = [
             Elephant(white_color),
-            #Elephant(white_color),
+            Elephant(white_color),
             Lion(white_color),
-            #Lion(white_color),
+            Lion(white_color),
             Zebra(white_color),
-            #Zebra(white_color),
+            Zebra(white_color),
             Gazelle(white_color),
-            #Gazelle(white_color),
+            Gazelle(white_color),
         ]
         self.pieces_placed = []
 

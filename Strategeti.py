@@ -5,13 +5,14 @@ import Player
 
 
 class Strategeti:
-    def __init__(self):
+    def __init__(self, database):
         self.board = [['' for _ in range(4)] for _ in range(4)]
         self.position_set = {}
-        self.player1 = Player.Player(True)
-        self.player2 = Player.Player(False)
+        self.player1 = Player.Player(True, database)
+        self.player2 = Player.Player(False, database)
         self.draw = False
         self.white_to_move = True
+        self.database = database
 
     def put_piece(self, x, y, piece : Piece):
         self.board[x][y] = piece
@@ -46,11 +47,12 @@ class Strategeti:
         while True:
             self.player1.update_pieces()
             self.player2.update_pieces()
-            self.show_board()
-            print(self.player1.get_legal_moves(self.board))
+
             if self.check_winner():
                 break
 
+            self.show_board()
+            print(self.player1.get_legal_moves(self.board))
             if len(self.player1.get_legal_moves(self.board)) > 0:
                 self.make_move(self.player1)
                 self.white_to_move = False
@@ -58,11 +60,12 @@ class Strategeti:
                 print("Black won : White out of moves")
                 break
 
+            self.player1.update_pieces()
+            self.player2.update_pieces()
+
             if self.check_winner():
                 break
 
-            self.player1.update_pieces()
-            self.player2.update_pieces()
             self.show_board()
             print(self.player2.get_legal_moves(self.board))
             if len(self.player2.get_legal_moves(self.board)) > 0:
@@ -83,6 +86,7 @@ class Strategeti:
         elif len(self.player2.pieces_captured) == 5:
             print("White won : 5 captures")
         elif self.draw:
+            print(self.get_FEN_board())
             print("Draw : 3 times repetition")
         else:
             return False
@@ -90,7 +94,7 @@ class Strategeti:
 
     def make_move(self, player):
         player.make_move(self.board)
-        new_position = self.get_FEN_board()
+        new_position = self.get_FEN_board()[:-1]
         if new_position not in self.position_set:
             self.position_set[new_position] = 1
         else:
@@ -107,6 +111,7 @@ class Strategeti:
         - The list of captured pieces for both players
         - |
         - The board (row major, empty squares represented by underscore)
+        - The number of time the position was reached
 
 
         :return:
@@ -126,7 +131,11 @@ class Strategeti:
                 else:
                     board.append(piece.__str__())
 
-        return turn + to_be_placed_p1 + to_be_placed_p2 + "|" + captured_p1 + captured_p2 + "|" + "".join(board)
+        partial = turn + to_be_placed_p1 + to_be_placed_p2 + "|" + captured_p1 + captured_p2 + "|" + "".join(board)
+        if partial not in self.position_set:
+            return partial + "0"
+        else:
+            return partial + str(self.position_set[partial])
 
 
     def get_board(self):
