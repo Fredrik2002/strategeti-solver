@@ -14,6 +14,7 @@ class Strategeti:
         self.player2 = Player.Player(False, self.database)
         self.draw = False
         self.white_to_move = True
+        self.history = []
 
     def put_piece(self, x, y, piece : Piece):
         self.board[x][y] = piece
@@ -45,18 +46,15 @@ class Strategeti:
         print()
 
     def play(self):
-        self.player1.update_pieces()
-        self.player2.update_pieces()
-
         self.show_board()
 
         if self.check_winner():
             return True
 
         if self.white_to_move:
-            self.make_move(self.player1)
+            self.player1.make_move(self)
         else:
-            self.make_move(self.player2)
+            self.player2.make_move(self)
 
 
     def check_winner(self):
@@ -88,8 +86,18 @@ class Strategeti:
             self.database.save_state(self.get_FEN_board(), finished, evaluation)
         return finished
 
-    def make_move(self, player):
-        player.make_move(self)
+    def make_move_on_board(self, move):
+        player = self.player1 if self.white_to_move else self.player2
+        piece = move[-1]
+        if move[0] == "Place":
+            player.pieces_placed.append(move[-1])
+            player.pieces_to_be_placed.remove(move[-1])
+        piece.make_move(self.get_board(), move)
+
+        self.white_to_move = not self.white_to_move
+
+        self.player1.update_pieces()
+        self.player2.update_pieces()
 
         new_position = self.get_FEN_board()[:-1]
         if new_position not in self.position_set:
@@ -100,15 +108,11 @@ class Strategeti:
             if self.position_set[new_position] == 3:
                 self.draw = True
 
-    def make_move_on_board(self, move):
-        player = self.player1 if self.white_to_move else self.player2
-        piece = move[-1]
-        if move[0] == "Place":
-            player.pieces_placed.append(move[-1])
-            player.pieces_to_be_placed.remove(move[-1])
-        piece.make_move(self.get_board(), move)
-
-        self.white_to_move = not self.white_to_move
+        self.history.append(move)
+        try :
+            self.FEN_safety()
+        except AssertionError as e:
+            print(e)
 
     def get_FEN_board(self):
         """
@@ -143,6 +147,16 @@ class Strategeti:
             return partial + "0"
         else:
             return partial + str(self.position_set[partial])
+
+    def FEN_safety(self):
+        fen = self.get_FEN_board()
+        for c in ['G', 'g', 'l', 'L', 'e', 'E', 'Z', 'z']:
+            assert fen.count(c) == 2
+
+        for x in range(4):
+            for y in range(4):
+                if self.board[x][y] != '':
+                    assert self.board[x][y].get_coords() == (x, y)
 
 
     def get_board(self):

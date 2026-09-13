@@ -50,8 +50,17 @@ class Player:
         return result
 
     def make_move(self, game):
-        for move in self.get_legal_moves(game.get_board()):
+        for i in range(len(self.get_legal_moves(game.get_board()))):
             tmp_game = copy.deepcopy(game)
+
+            # We pick the player copied, not the original one
+            player = tmp_game.player1 if self.white_color else tmp_game.player2
+
+            # We also pick the move from the copied player/game, to have the copied piece
+            move = player.get_legal_moves(tmp_game.get_board())[i]
+
+            # Make sure the deepcopy worked well
+            self.assert_copy_safety(game, tmp_game)
             tmp_game.set_database(game.get_database())
 
             print(f"List of moves : {self.get_legal_moves(game.get_board())}")
@@ -69,3 +78,7 @@ class Player:
             self.pieces_placed.remove(piece)
             self.pieces_captured.append(piece)
             print(f"Piece captured : {piece}")
+
+    def assert_copy_safety(self, game, tmp_game):
+        for i in range(len(game.player1.pieces_placed)):
+            assert id(game.player1.pieces_placed[i]) != id(tmp_game.player1.pieces_placed[i])

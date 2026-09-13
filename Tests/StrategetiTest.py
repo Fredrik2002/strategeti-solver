@@ -22,7 +22,7 @@ game.set_database(storage)
 
 try :
     game.play()
-except Exception as e:
+except (Exception, KeyboardInterrupt) as e:
     print(traceback.format_exc())
     print("Database saved successfully")
     storage.save_database()
