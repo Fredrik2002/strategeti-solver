@@ -67,6 +67,8 @@ class Player:
             print(f"Selected move : {move}")
             tmp_game.make_move_on_board(move)
 
+            print(len(tmp_game.history), tmp_game.history)
+
             # We keep the game going
             tmp_game.play()
 

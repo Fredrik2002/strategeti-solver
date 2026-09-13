@@ -8,14 +8,67 @@ class Elephant(Piece):
 
     def get_legal_moves(self, board : list[list[str]]):
         list_legal_moves = []
-        if self.x - 1 >= 0 and board[self.x - 1][self.y] != '':
-            list_legal_moves.append(("Push Up", self.x - 1, self.y, self))
-        if self.x + 1 <= 3 and board[self.x + 1][self.y] != '':
-            list_legal_moves.append(("Push Down", self.x + 1, self.y, self))
-        if self.y - 1 >= 0 and board[self.x][self.y - 1] != '':
-            list_legal_moves.append(("Push Left", self.x, self.y - 1, self))
-        if self.y + 1 <= 3 and board[self.x][self.y + 1] != '':
-            list_legal_moves.append(("Push Right", self.x, self.y + 1, self))
+
+        # Push up :
+        for i in range(self.x - 1, -1, -1):
+
+            # Off board, or Elephant on the piece up
+            if i < 0  or isinstance(board[i][self.y], Elephant):
+                break
+            # Empty square
+            elif isinstance(board[i][self.y], str):
+                if i != self.x - 1:
+                    # If we already saw a pushable piece, and we are now on an empty square, we can push
+                    list_legal_moves.append(("Push Up", self.x - 1, self.y, self))
+                else:
+                    # If the first square up is empty, no push available
+                    break
+
+        # Push down
+        for i in range(self.x + 1, 4):
+
+            # Off board, or Elephant on the piece up
+            if i > 3  or isinstance(board[i][self.y], Elephant):
+                break
+            # Empty square
+            elif isinstance(board[i][self.y], str):
+                if i != self.x + 1:
+                    # If we already saw a pushable piece, and we are now on an empty square, we can push
+                    list_legal_moves.append(("Push Down", self.x + 1, self.y, self))
+                else:
+                    # If the first square up is empty, no push available
+                    break
+
+        # Push left
+        for i in range(self.y - 1, -1, -1):
+
+            # Off board, or Elephant on the piece up
+            if i < 0 or isinstance(board[self.x][i], Elephant):
+                break
+            # Empty square
+            elif isinstance(board[self.x][i], str):
+                if i != self.y - 1:
+                    # If we already saw a pushable piece, and we are now on an empty square, we can push
+                    list_legal_moves.append(("Push Left", self.x, self.y - 1, self))
+                else:
+                    # If the first square up is empty, no push available
+                    break
+
+        # Push right
+        for i in range(self.y + 1, 4):
+
+            # Off board, or Elephant on the piece up
+            if i > 3 or isinstance(board[self.x][i], Elephant):
+                break
+            # Empty square
+            elif isinstance(board[self.x][i], str):
+                if i != self.y + 1:
+                    # If we already saw a pushable piece, and we are now on an empty square, we can push
+                    list_legal_moves.append(("Push Right", self.x, self.y + 1, self))
+                else:
+                    # If the first square up is empty, no push available
+                    break
+
         return list_legal_moves
 
     def make_move(self, board : list[list[Piece]], move : tuple[str, int , int, Piece]):
