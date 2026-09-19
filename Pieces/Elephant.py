@@ -1,4 +1,5 @@
 from Pieces.Piece import Piece
+from Strategeti import Strategeti
 
 
 class Elephant(Piece):
@@ -10,113 +11,102 @@ class Elephant(Piece):
         list_legal_moves = []
 
         # Push up :
+        elephant = False
         for i in range(self.x - 1, -1, -1):
 
             # Off board, or Elephant on the piece up
-            if i < 0  or isinstance(board[i][self.y], Elephant):
+            if isinstance(board[i][self.y], Elephant):
+                elephant = True
                 break
             # Empty square
             elif isinstance(board[i][self.y], str):
                 if i != self.x - 1:
-                    # If we already saw a pushable piece, and we are now on an empty square, we can push
-                    list_legal_moves.append(("Push Up", self.x - 1, self.y, self))
-                else:
-                    # If the first square up is empty, no push available
                     break
+        if not elephant and self.x - 1 >= 0 and isinstance(board[self.x - 1][self.y], Piece):
+            list_legal_moves.append(("Push Up", self.x - 1, self.y, self))
 
         # Push down
+        elephant = False
         for i in range(self.x + 1, 4):
 
             # Off board, or Elephant on the piece up
-            if i > 3  or isinstance(board[i][self.y], Elephant):
+            if isinstance(board[i][self.y], Elephant):
+                elephant = True
                 break
             # Empty square
             elif isinstance(board[i][self.y], str):
                 if i != self.x + 1:
-                    # If we already saw a pushable piece, and we are now on an empty square, we can push
-                    list_legal_moves.append(("Push Down", self.x + 1, self.y, self))
-                else:
-                    # If the first square up is empty, no push available
                     break
+        # Elephant check passed, and piece next to the elephant
+        if not elephant and self.x + 1 <= 3 and isinstance(board[self.x + 1][self.y], Piece):
+            list_legal_moves.append(("Push Down", self.x + 1, self.y, self))
 
         # Push left
+        elephant = False
         for i in range(self.y - 1, -1, -1):
 
             # Off board, or Elephant on the piece up
-            if i < 0 or isinstance(board[self.x][i], Elephant):
+            if isinstance(board[self.x][i], Elephant):
+                elephant = True
                 break
             # Empty square
             elif isinstance(board[self.x][i], str):
                 if i != self.y - 1:
-                    # If we already saw a pushable piece, and we are now on an empty square, we can push
-                    list_legal_moves.append(("Push Left", self.x, self.y - 1, self))
-                else:
-                    # If the first square up is empty, no push available
                     break
+        # Elephant check passed, and piece next to the elephant
+        if not elephant and self.y - 1 >= 0 and isinstance(board[self.x][self.y - 1], Piece):
+            list_legal_moves.append(("Push Left", self.x, self.y - 1, self))
 
         # Push right
+        elephant = False
         for i in range(self.y + 1, 4):
 
             # Off board, or Elephant on the piece up
-            if i > 3 or isinstance(board[self.x][i], Elephant):
+            if isinstance(board[self.x][i], Elephant):
+                elephant = True
                 break
             # Empty square
             elif isinstance(board[self.x][i], str):
                 if i != self.y + 1:
-                    # If we already saw a pushable piece, and we are now on an empty square, we can push
-                    list_legal_moves.append(("Push Right", self.x, self.y + 1, self))
-                else:
-                    # If the first square up is empty, no push available
                     break
+        # Elephant check passed, and piece next to the elephant
+        if not elephant and self.y + 1 <= 3 and isinstance(board[self.x][self.y + 1], Piece):
+            list_legal_moves.append(("Push Right", self.x, self.y + 1, self))
 
         return list_legal_moves
 
-    def make_move(self, board : list[list[Piece]], move : tuple[str, int , int, Piece]):
+    def make_move(self, game : Strategeti, move : tuple[str, int , int, Piece]):
         move_name, x, y, _ = move
-        if "Push" in move_name:
-            next_piece = board[self.x][self.y]
-            board[self.x][self.y] = ''
-            if move_name == "Push Up":
-                for i in range(self.x - 1, -1, -1):
-                    current_piece = next_piece
-                    if current_piece == '':
-                        break
-                    next_piece = board[i][y]
-                    board[i][y] = current_piece
-                    current_piece.set_coords(i, y)
 
-            elif move_name == "Push Down":
-                for i in range(self.x + 1, 4):
-                    current_piece = next_piece
-                    if current_piece == '':
-                        break
-                    next_piece = board[i][y]
-                    board[i][y] = current_piece
-                    current_piece.set_coords(i, y)
+        if move_name == "Push Up":
+            self._push_iteration(range(self.x - 1, -1, -1), [self.y] * self.x, game)
 
-            elif move_name == "Push Left":
-                for i in range(self.y - 1, -1, -1):
-                    current_piece = next_piece
-                    if current_piece == '':
-                        break
-                    next_piece = board[x][i]
-                    board[x][i] = current_piece
-                    current_piece.set_coords(x, i)
+        elif move_name == "Push Down":
+            self._push_iteration(range(self.x + 1, 4), [self.y] * (3 - self.x), game)
 
-            elif move_name == "Push Right":
-                for i in range(self.y + 1, 4):
-                    current_piece = next_piece
-                    if current_piece == '':
-                        break
-                    next_piece = board[x][i]
-                    board[x][i] = current_piece
-                    current_piece.set_coords(x, i)
+        elif move_name == "Push Left":
+            self._push_iteration([self.x] * self.y, range(self.y - 1, -1, -1), game)
 
-            if next_piece != '':
-                next_piece.set_coords(-1, -1)
-                next_piece.is_captured = True
+        elif move_name == "Push Right":
+            self._push_iteration([self.x] * (3 - self.y), range(self.y + 1, 4), game)
+
         else:
-            super().make_move(board, move)
+            super().make_move(game.board, move)
 
+    def _push_iteration(self, x_range, y_range, game : Strategeti):
+        game.board[self.x][self.y] = ''
+
+        # We start by moving the elephant
+        next_piece = self
+        for x, y in enumerate(x_range, y_range):
+            current_piece = next_piece
+            if current_piece == '':
+                break
+            next_piece = game.board[x][y]
+            current_piece.set_coords(x, y, game)
+
+        # If the last piece is pushed off the board
+        if next_piece != '':
+            next_piece.set_coords(-1, -1, game)
 
 

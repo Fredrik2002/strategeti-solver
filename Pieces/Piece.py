@@ -1,4 +1,6 @@
-from abc import abstractclassmethod, ABC, abstractmethod
+from abc import ABC, abstractmethod
+
+from Strategeti import Strategeti
 
 
 class Piece(ABC):
@@ -17,17 +19,21 @@ class Piece(ABC):
         self.white_color = white_color
         self.id = id(self)
 
+        self.past_positions = []
 
-    '''
-    Returns a list of legal moves with a 3-tuple :
-    - "M" for move, "C" for capture, "P" for push
-    - x : the new x coordinate for the piece
-    - y : the new y coordinate for the piece
-    '''
 
     def set_coords(self, x, y):
         self.x = x
         self.y = y
+        self.past_positions.append((x, y))
+        if (x, y) == (-1, -1):
+            self.is_captured = True
+
+    def set_coords(self, x, y, game : Strategeti):
+        game.pieces_moved[-1].add(self)
+        game.board[x][y] = self
+
+        self.set_coords(x, y)
 
     def get_coords(self):
         return self.x, self.y
@@ -41,15 +47,24 @@ class Piece(ABC):
         board[x][y] = self
 
         # We clear the previous position
-        if move_name == "M":
+        if move_name in ["M", "C"]:
             board[self.x][self.y] = ""
+            self.past_positions.append((self.x, self.y))
 
         self.x, self.y = x, y
 
-        self.custom_make_move()
+    def cancel_move(self, game):
+        position = game.get_FEN_board()[:-1]
+        game.position_set[position] -= 1
 
-    def custom_make_move(self):
-        pass
+        # Clear the previous position
+        game.board[self.x][self.y] = ""
+
+        # Put new one on the board
+        self.x, self.y = self.past_positions.pop(-1)
+        game.board[self.x][self.y] = self
+        game.history.pop(-1)
+        game.white_to_move = not game.white_to_move
 
     def __str__(self):
         return self.name

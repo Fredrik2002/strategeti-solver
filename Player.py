@@ -1,5 +1,7 @@
 import copy
 import random
+
+import PositionStorage
 import Strategeti
 from Pieces.Elephant import Elephant
 from Pieces.Gazelle import Gazelle
@@ -11,7 +13,7 @@ from Pieces.Zebra import Zebra
 class Player:
     def __init__(self, white_color, database):
         self.white_color = white_color
-        self.database = database
+        self.position_storage : PositionStorage.PositionStorage = database
         self.pieces_to_be_placed = [
             Elephant(white_color),
             Elephant(white_color),
@@ -50,28 +52,62 @@ class Player:
         return result
 
     def make_move(self, game):
-        for i in range(len(self.get_legal_moves(game.get_board()))):
-            tmp_game = copy.deepcopy(game)
+        move_to_position_dict = {}
+        possible_moves = self.get_legal_moves(game.get_board())
 
-            # We pick the player copied, not the original one
-            player = tmp_game.player1 if self.white_color else tmp_game.player2
+        for i in range(len(possible_moves)):
+            if possible_moves[i][0] == "M":
+                # No need for the deepcopy, we can just make the move and cancel it
+                move = possible_moves[i]
+                game.make_move_on_board(move)
+                tmp_game = game
+            else:
+                # Cancel move not yet implemented for captured
+                tmp_game = copy.deepcopy(game)
 
-            # We also pick the move from the copied player/game, to have the copied piece
-            move = player.get_legal_moves(tmp_game.get_board())[i]
+                # We pick the player copied, not the original one
+                player = tmp_game.player1 if self.white_color else tmp_game.player2
 
-            # Make sure the deepcopy worked well
-            self.assert_copy_safety(game, tmp_game)
-            tmp_game.set_database(game.get_database())
+                # We also pick the move from the copied player/game, to have the copied piece
+                move = player.get_legal_moves(tmp_game.get_board())[i]
 
-            print(f"List of moves : {self.get_legal_moves(game.get_board())}")
-            print(f"Selected move : {move}")
-            tmp_game.make_move_on_board(move)
+                # Make sure the deepcopy worked well
+                tmp_game.set_database(game.get_database())
 
-            print(len(tmp_game.history), tmp_game.history)
+                tmp_game.make_move_on_board(move)
 
-            # We keep the game going
-            tmp_game.play()
+            print("Depth : " + str(len(tmp_game.history)))
+            # We keep the game going if we don't know the evaluation of this position
+            if tmp_game.get_FEN_board() not in self.position_storage.get_database():
+                tmp_game.play()
+            else:
+                print("Known position : " + tmp_game.get_FEN_board())
+            move_to_position_dict[move] = self.position_storage.get_database()[tmp_game.get_FEN_board()]
 
+            # Cancel the move if we didn't make a deepcopy :
+            if possible_moves[i][0] == "M":
+                possible_moves[i][-1].cancel_move(game)
+
+        print("New position solved")
+        self.evaluate_and_save(game, move_to_position_dict)
+
+    def evaluate_and_save(self, game, move_to_position_dict):
+        '''
+        Computes the best possible move along all the possibilities.
+        The best move is used to compute the current position evaluation
+        Once the best move is computed, the position evaluation is saved in the database
+
+        :param game: The game with the original position
+        :param move_to_position_dict: The correspondance move -> FEN position
+        '''
+        best_eval = None
+        for move, (finished, evaluation) in move_to_position_dict.items():
+
+            if self.is_better(evaluation, best_eval):
+                best_move = move
+                best_eval = evaluation
+
+        self.position_storage.save_state(game.get_FEN_board(), False, self.next_eval(best_eval))
 
 
     def update_pieces(self):
@@ -79,8 +115,48 @@ class Player:
         for piece in newly_captured:
             self.pieces_placed.remove(piece)
             self.pieces_captured.append(piece)
-            print(f"Piece captured : {piece}")
 
     def assert_copy_safety(self, game, tmp_game):
         for i in range(len(game.player1.pieces_placed)):
             assert id(game.player1.pieces_placed[i]) != id(tmp_game.player1.pieces_placed[i])
+
+    def is_better(self, evaluation, best_eval):
+        """
+        For white, ordering from worst to best is : [Black, -1, -2, -3, ..., 0, ..., +3, +2, +1, White]
+
+        For black, ordering from worst to be is : [White, +1, +2, +3, ..., 0, ..., -3, -2, -1, Black]
+
+        :return: true is evaluation is better than best_eval for the current_player
+        """
+        if best_eval is None : return True
+        if self.white_color:
+            if isinstance(evaluation, int) and isinstance(best_eval, int):
+                return evaluation > best_eval
+            elif isinstance(evaluation, str):
+                return evaluation == "White"
+            else:
+                return best_eval == "Black"
+        else:
+            if isinstance(evaluation, int) and isinstance(best_eval, int):
+                return evaluation < best_eval
+            elif isinstance(evaluation, str):
+                return evaluation == "Black"
+            else:
+                return best_eval == "White"
+
+    def next_eval(self, evaluation):
+        if self.white_color:
+            if evaluation == "Black" or (isinstance(evaluation, int) and evaluation <= 0):
+                return evaluation
+            elif evaluation == "White":
+                return 1
+            else:
+                return evaluation + 1
+        else:
+            if evaluation == "White" or (isinstance(evaluation, int) and evaluation >= 0):
+                return evaluation
+            elif evaluation == "Black":
+                return -1
+            else:
+                return evaluation + 1
+

@@ -4,5 +4,5 @@ GAME RULES :
 - 8 animals for each 
 
 ➡️ TO BE FIXED :
-- Elephant cannot push another Elephant anywhere in the row
+- Find an order for the pieces
 - Zebra cannot jump over other animals

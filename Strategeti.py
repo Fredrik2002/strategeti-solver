@@ -15,6 +15,8 @@ class Strategeti:
         self.draw = False
         self.white_to_move = True
         self.history = []
+        self.move_number = 0
+        self.pieces_moved = []
 
     def put_piece(self, x, y, piece : Piece):
         self.board[x][y] = piece
@@ -46,8 +48,7 @@ class Strategeti:
         print()
 
     def play(self):
-        self.show_board()
-
+        self.move_number += 1
         if self.check_winner():
             return True
 
@@ -63,25 +64,32 @@ class Strategeti:
 
         :return: True if the game is finished (White won, Black won, or draw), False otherwise
         """
-        finished = True
+        finished = False
         evaluation = None
-        if len(self.player2.get_legal_moves(self.board)) == 0:
-            print("White won : Black out of moves")
-            evaluation = "White"
-        elif len(self.player1.get_legal_moves(self.board)) == 0:
-            print("Black won : White out of moves")
-            evaluation = "Black"
-        elif len(self.player1.pieces_captured) == 5:
+        if len(self.player1.pieces_captured) == 5:
             print("Black won : 5 captures")
             evaluation = "Black"
+            finished = True
         elif len(self.player2.pieces_captured) == 5:
             print("White won : 5 captures")
             evaluation = "White"
+            finished = True
         elif self.draw:
             print(self.get_FEN_board())
             print("Draw : 3 times repetition")
+            evaluation = 0
+            finished = True
+        elif self.white_to_move:
+            if len(self.player1.get_legal_moves(self.board)) == 0:
+                print("Black won : White out of moves")
+                evaluation = "Black"
+                finished = True
         else:
-            finished = False
+            if len(self.player2.get_legal_moves(self.board)) == 0:
+                print("White won : Black out of moves")
+                evaluation = "White"
+                finished = True
+
         if finished:
             self.database.save_state(self.get_FEN_board(), finished, evaluation)
         return finished
@@ -109,10 +117,6 @@ class Strategeti:
                 self.draw = True
 
         self.history.append(move)
-        try :
-            self.FEN_safety()
-        except AssertionError as e:
-            print(e)
 
     def get_FEN_board(self):
         """
@@ -128,11 +132,13 @@ class Strategeti:
         :return:
         """
         turn = "0" if self.white_to_move else "1"
-        to_be_placed_p1 = "".join(list(map(lambda piece : piece.__str__(), self.player1.pieces_to_be_placed)))
-        to_be_placed_p2 = "".join(list(map(lambda piece : piece.__str__(), self.player2.pieces_to_be_placed)))
+        to_be_placed_p1 = list(map(lambda piece : piece.__str__(), self.player1.pieces_to_be_placed))
+        to_be_placed_p2 = list(map(lambda piece : piece.__str__(), self.player2.pieces_to_be_placed))
+        placed = "".join(sorted(to_be_placed_p1 + to_be_placed_p2))
 
-        captured_p1 = "".join(list(map(lambda piece: piece.__str__(), self.player1.pieces_captured)))
-        captured_p2 = "".join(list(map(lambda piece: piece.__str__(), self.player2.pieces_captured)))
+        captured_p1 = list(map(lambda piece: piece.__str__(), self.player1.pieces_captured))
+        captured_p2 = list(map(lambda piece: piece.__str__(), self.player2.pieces_captured))
+        captured = "".join(sorted(captured_p1 + captured_p2))
 
         board = []
         for row in self.board:
@@ -142,7 +148,7 @@ class Strategeti:
                 else:
                     board.append(piece.__str__())
 
-        partial = turn + to_be_placed_p1 + to_be_placed_p2 + "|" + captured_p1 + captured_p2 + "|" + "".join(board)
+        partial = turn + placed + "|" + captured + "|" + "".join(board)
         if partial not in self.position_set:
             return partial + "0"
         else:
@@ -164,8 +170,8 @@ class Strategeti:
 
     def set_database(self, database):
         self.database = database
-        self.player1.database = database
-        self.player2.database = database
+        self.player1.position_storage = database
+        self.player2.position_storage = database
 
     def get_database(self):
         return self.database

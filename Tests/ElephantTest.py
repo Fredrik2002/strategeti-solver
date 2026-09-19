@@ -8,9 +8,9 @@ elephant = Elephant(True)
 
 # Case 1 : Empty board
 game.put_piece(1, 2, elephant)
-assert elephant.get_legal_moves(game.get_board()) == []
+assert elephant.get_legal_moves(game.get_board()) == [], elephant.get_legal_moves(game.get_board())
 
-# Case 2 : Pieces near, push left & up
+# Case 2 : Pieces near, push in all 4 directions
 game.put_piece(1,1, Gazelle(True))
 game.put_piece(1,3, Gazelle(True))
 game.put_piece(0,2, Gazelle(True))
@@ -18,7 +18,8 @@ game.put_piece(2,2, Gazelle(True))
 game.put_piece(2, 1, Gazelle(True))
 
 assert (elephant.get_legal_moves(game.get_board()) ==
-        [('Push Down', 2, 2, elephant), ('Push Left', 1, 1, elephant)]), elephant.get_legal_moves(game.get_board())
+        [('Push Up', 0, 2, elephant), ('Push Down', 2, 2, elephant),
+         ('Push Left', 1, 1, elephant), ('Push Right', 1, 3, elephant)]), elephant.get_legal_moves(game.get_board())
 
 
 # Case 3 : Make the move ('Push Left', 1, 1, elephant)
