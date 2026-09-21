@@ -1,11 +1,10 @@
 from Pieces.Piece import Piece
-from Strategeti import Strategeti
 
 
 class Elephant(Piece):
 
-    def __init__(self, white_color):
-        super().__init__("E", white_color)
+    def __init__(self, player):
+        super().__init__("E", player)
 
     def get_legal_moves(self, board : list[list[str]]):
         list_legal_moves = []
@@ -75,7 +74,7 @@ class Elephant(Piece):
 
         return list_legal_moves
 
-    def make_move(self, game : Strategeti, move : tuple[str, int , int, Piece]):
+    def make_move(self, game, move : tuple[str, int , int, Piece]):
         move_name, x, y, _ = move
 
         if move_name == "Push Up":
@@ -91,22 +90,22 @@ class Elephant(Piece):
             self._push_iteration([self.x] * (3 - self.y), range(self.y + 1, 4), game)
 
         else:
-            super().make_move(game.board, move)
+            super().make_move(game, move)
 
-    def _push_iteration(self, x_range, y_range, game : Strategeti):
+    def _push_iteration(self, x_range, y_range, game):
         game.board[self.x][self.y] = ''
 
         # We start by moving the elephant
         next_piece = self
-        for x, y in enumerate(x_range, y_range):
+        for x, y in zip(x_range, y_range):
             current_piece = next_piece
             if current_piece == '':
                 break
             next_piece = game.board[x][y]
-            current_piece.set_coords(x, y, game)
+            current_piece.set_coords_and_game(x, y, game)
 
         # If the last piece is pushed off the board
         if next_piece != '':
-            next_piece.set_coords(-1, -1, game)
+            next_piece.set_coords_and_game(-1, -1, game)
 
 

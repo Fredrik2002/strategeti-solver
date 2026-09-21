@@ -1,5 +1,4 @@
 from Pieces.Piece import Piece
-from Strategeti import Strategeti
 
 
 class Lion(Piece):
@@ -18,14 +17,11 @@ class Lion(Piece):
             list_legal_moves.append(("C", self.x, self.y + 1, self))
         return list_legal_moves
 
-    def make_move(self, game : Strategeti, move : tuple[str, int , int, None]):
+    def make_move(self, game, move : tuple[str, int , int, None]):
         move_name, x, y, _ = move
         if move_name == "C":
             # A piece gets captured, we remove it from the board
             piece_captured : Piece = game.board[x][y]
-            piece_captured.set_coords(-1, -1)
-            piece_captured.is_captured = True
-            game.pieces_moved[-1].add(piece_captured)
-            piece_captured.past_positions.append((x, y))
+            piece_captured.set_coords_and_game(-1, -1, game)
 
-        super().make_move(game.board, move)
+        super().make_move(game, move)

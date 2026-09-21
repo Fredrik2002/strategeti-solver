@@ -11,22 +11,22 @@ from Pieces.Zebra import Zebra
 
 
 class Player:
-    def __init__(self, white_color, database):
+    def __init__(self, white_color, database : PositionStorage.PositionStorage):
         self.white_color = white_color
         self.position_storage : PositionStorage.PositionStorage = database
-        self.pieces_to_be_placed = [
-            Elephant(white_color),
-            Elephant(white_color),
-            Lion(white_color),
-            Lion(white_color),
-            Zebra(white_color),
-            Zebra(white_color),
-            Gazelle(white_color),
-            Gazelle(white_color),
-        ]
-        self.pieces_placed = []
+        self.pieces_to_be_placed = {
+            Elephant(self),
+            Elephant(self),
+            Lion(self),
+            Lion(self),
+            Zebra(self),
+            Zebra(self),
+            Gazelle(self),
+            Gazelle(self),
+        }
+        self.pieces_placed = set()
 
-        self.pieces_captured = []
+        self.pieces_captured = set()
 
     def get_legal_moves(self, board):
         list_possible_moves = []
@@ -55,38 +55,27 @@ class Player:
         move_to_position_dict = {}
         possible_moves = self.get_legal_moves(game.get_board())
 
-        for i in range(len(possible_moves)):
-            if possible_moves[i][0] == "M":
-                # No need for the deepcopy, we can just make the move and cancel it
-                move = possible_moves[i]
-                game.make_move_on_board(move)
-                tmp_game = game
-            else:
-                # Cancel move not yet implemented for captured
-                tmp_game = copy.deepcopy(game)
+        for move in possible_moves:
+            game.FEN_safety()
+            game.make_move(move)
+            game.FEN_safety()
 
-                # We pick the player copied, not the original one
-                player = tmp_game.player1 if self.white_color else tmp_game.player2
+            print("Depth : " + str(len(game.history)))
 
-                # We also pick the move from the copied player/game, to have the copied piece
-                move = player.get_legal_moves(tmp_game.get_board())[i]
-
-                # Make sure the deepcopy worked well
-                tmp_game.set_database(game.get_database())
-
-                tmp_game.make_move_on_board(move)
-
-            print("Depth : " + str(len(tmp_game.history)))
+            fen = game.get_FEN_board()
             # We keep the game going if we don't know the evaluation of this position
-            if tmp_game.get_FEN_board() not in self.position_storage.get_database():
-                tmp_game.play()
+            if fen not in self.position_storage.get_database():
+                game.play()
             else:
-                print("Known position : " + tmp_game.get_FEN_board())
-            move_to_position_dict[move] = self.position_storage.get_database()[tmp_game.get_FEN_board()]
+                print("Known position : " + fen)
+            move_to_position_dict[move] = self.position_storage.get_database()[fen]
+            print(move, fen)
 
-            # Cancel the move if we didn't make a deepcopy :
-            if possible_moves[i][0] == "M":
-                possible_moves[i][-1].cancel_move(game)
+            # We go back to the original position
+            game.FEN_safety()
+            game.cancel_move()
+            game.FEN_safety()
+
 
         print("New position solved")
         self.evaluate_and_save(game, move_to_position_dict)
@@ -113,8 +102,8 @@ class Player:
     def update_pieces(self):
         newly_captured = [piece for piece in self.pieces_placed if piece.is_captured]
         for piece in newly_captured:
-            self.pieces_placed.remove(piece)
-            self.pieces_captured.append(piece)
+            self.pieces_placed.discard(piece)
+            self.pieces_captured.add(piece)
 
     def assert_copy_safety(self, game, tmp_game):
         for i in range(len(game.player1.pieces_placed)):
@@ -159,4 +148,13 @@ class Player:
                 return -1
             else:
                 return evaluation + 1
+
+    def get_color(self):
+        return self.white_color
+
+    def get_free_piece(self, piece):
+        for p in self.pieces_to_be_placed | self.pieces_placed | self.pieces_captured:
+            if p.__class__ == piece.__class__:
+                return p
+
 

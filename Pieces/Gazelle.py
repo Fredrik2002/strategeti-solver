@@ -35,8 +35,5 @@ class Gazelle(Piece):
         list_legal_moves.pop(0)
         return list_legal_moves
 
-    def __eq__(self, other):
-        return self.__class__ == other.__class__ and self.get_coords() == other.get_coords()
-
     def __hash__(self):
         return 0

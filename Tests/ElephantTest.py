@@ -36,7 +36,6 @@ assert (elephant.get_legal_moves(game.get_board()) ==
 game.make_move(("Place", 1, 0, Lion(player)))
 game.remove_piece(1, 3)
 
-game.show_board()
 game.make_move(('Push Left', 1, 1, elephant))
 assert elephant.get_coords() == (1, 1)
 
@@ -50,7 +49,6 @@ game.make_move(("Place", 1, 3, elephant))
 game.make_move(("Place", 1, 2, gazelle1))
 game.make_move(("Place", 1, 0, gazelle2))
 
-game.show_board()
 game.make_move(('Push Left', 1, 2, elephant))
 assert elephant.get_coords() == (1,2)
 assert gazelle1.get_coords() == (1, 1)
@@ -79,4 +77,22 @@ game.make_move(("Place", 2, 1, Gazelle(player)))
 game.make_move(("Place", 0, 1, Elephant(player)))
 game.make_move(("Place", 3, 2, Elephant(player)))
 assert elephant.get_legal_moves(game.get_board()) == [("Push Up", 2, 1, elephant)], elephant.get_legal_moves(game.get_board())
+
+# Case 8 :
+game = Strategeti()
+player = game.player1
+elephant = player.get_free_piece(Elephant(player))
+gazelle = player.get_free_piece(Gazelle(player))
+game.make_move(("Place", 3, 2, elephant))
+game.make_move(("Place", 3, 3, gazelle))
+
+assert elephant.get_legal_moves(game.get_board()) == [("Push Right", 3, 3, elephant)], elephant.get_legal_moves(game.get_board())
+game.make_move(("Push Right", 3, 3, elephant))
+assert gazelle.get_coords() == (-1, -1)
+assert elephant.get_coords() == (3, 3)
+assert gazelle.is_captured
+game.cancel_move()
+assert gazelle.get_coords() == (3, 3)
+assert elephant.get_coords() == (3, 2)
+assert not gazelle.is_captured
 

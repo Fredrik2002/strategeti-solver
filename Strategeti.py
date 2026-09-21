@@ -1,7 +1,7 @@
 import random
 
-from Pieces.Piece import Piece
 import Player
+from Pieces.Piece import Piece
 from PositionStorage import PositionStorage
 
 
@@ -15,19 +15,7 @@ class Strategeti:
         self.draw = False
         self.white_to_move = True
         self.history = []
-        self.move_number = 0
         self.pieces_moved = []
-
-    def put_piece(self, x, y, piece : Piece):
-        self.board[x][y] = piece
-        piece.set_coords(x, y)
-
-        if (x not in [0,3] or y not in [0,3]) and self.board[x][y] == '':
-            self.board[x][y] = piece
-            piece.set_coords(x, y)
-
-            return True
-        return False
 
     def remove_piece(self, x, y):
         piece = self.board[x][y]
@@ -48,7 +36,7 @@ class Strategeti:
         print()
 
     def play(self):
-        self.move_number += 1
+        self.FEN_safety()
         if self.check_winner():
             return True
 
@@ -75,7 +63,6 @@ class Strategeti:
             evaluation = "White"
             finished = True
         elif self.draw:
-            print(self.get_FEN_board())
             print("Draw : 3 times repetition")
             evaluation = 0
             finished = True
@@ -94,29 +81,59 @@ class Strategeti:
             self.database.save_state(self.get_FEN_board(), finished, evaluation)
         return finished
 
-    def make_move_on_board(self, move):
-        player = self.player1 if self.white_to_move else self.player2
+    def make_move(self, move):
+        self.pieces_moved.append([])
         piece = move[-1]
         if move[0] == "Place":
-            player.pieces_placed.append(move[-1])
-            player.pieces_to_be_placed.remove(move[-1])
-        piece.make_move(self.get_board(), move)
+            piece.player.pieces_placed.add(move[-1])
+            piece.player.pieces_to_be_placed.discard(move[-1])
+        piece.make_move(self, move)
 
         self.white_to_move = not self.white_to_move
 
         self.player1.update_pieces()
         self.player2.update_pieces()
 
-        new_position = self.get_FEN_board()[:-1]
-        if new_position not in self.position_set:
-            self.position_set[new_position] = 1
-        else:
-            self.position_set[new_position] += 1
-            # If the position repeats 3 times, the game is declared draw
-            if self.position_set[new_position] == 3:
-                self.draw = True
+        self.add_position_to_set()
 
         self.history.append(move)
+
+    def cancel_move(self):
+        self.history.pop()
+
+        self.remove_position_from_set()
+
+        self.white_to_move = not self.white_to_move
+
+        pieces_moved : list[Piece] = self.pieces_moved.pop()
+        for piece_moved in pieces_moved:
+            piece_moved.cancel_move(self)
+
+    def add_position_to_set(self):
+        """
+        Adds a position in the position_set (or increase the count if the position was already seen)
+
+        :return:
+        """
+        position = self.get_FEN_board()[:-1]
+        if position not in self.position_set:
+            self.position_set[position] = 1
+        else:
+            self.position_set[position] += 1
+            # If the position repeats 3 times, the game is declared draw
+            if self.position_set[position] == 3:
+                self.draw = True
+
+    def remove_position_from_set(self):
+        self.draw = False
+        position = self.get_FEN_board()[:-1]
+        if position not in self.position_set:
+            print(f"WARNING : Trying to remove position {position} from {self.history}. This should not happen.")
+        elif self.position_set[position] == 1:
+            self.position_set.pop(position)
+        else:
+            self.position_set[position] -= 1
+
 
     def get_FEN_board(self):
         """

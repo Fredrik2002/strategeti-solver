@@ -1,11 +1,10 @@
 from abc import ABC, abstractmethod
 
-from Strategeti import Strategeti
 
 
 class Piece(ABC):
-    def __init__(self, name :str, white_color : bool):
-        if not white_color:
+    def __init__(self, name : str, player):
+        if not player.get_color():
             self.name = name.lower()
         else:
             self.name = name
@@ -16,22 +15,23 @@ class Piece(ABC):
         self.x = -1
         self.y = -1
 
-        self.white_color = white_color
+        self.player = player
         self.id = id(self)
 
         self.past_positions = []
 
 
     def set_coords(self, x, y):
-        self.x = x
-        self.y = y
-        self.past_positions.append((x, y))
+        self.past_positions.append((self.x, self.y))
+        self.x, self.y = x, y
         if (x, y) == (-1, -1):
             self.is_captured = True
 
-    def set_coords(self, x, y, game : Strategeti):
-        game.pieces_moved[-1].add(self)
-        game.board[x][y] = self
+    def set_coords_and_game(self, x, y, game):
+        game.pieces_moved[-1].append(self)
+
+        if (x, y) != (-1, -1):
+            game.board[x][y] = self
 
         self.set_coords(x, y)
 
@@ -42,29 +42,52 @@ class Piece(ABC):
     def get_legal_moves(self, board : list[list[str]]):
         pass
 
-    def make_move(self, board : list[list[str]], move : tuple[str, int , int, None]):
+    def make_move(self, game, move : tuple[str, int , int, None]):
         move_name, x, y, _ = move
-        board[x][y] = self
+        game.board[x][y] = self
+        game.pieces_moved[-1].append(self)
 
         # We clear the previous position
         if move_name in ["M", "C"]:
-            board[self.x][self.y] = ""
-            self.past_positions.append((self.x, self.y))
+            game.board[self.x][self.y] = ""
 
+        self.past_positions.append((self.x, self.y))
         self.x, self.y = x, y
 
     def cancel_move(self, game):
-        position = game.get_FEN_board()[:-1]
-        game.position_set[position] -= 1
 
-        # Clear the previous position
-        game.board[self.x][self.y] = ""
+        x, y = self.past_positions.pop()
 
-        # Put new one on the board
-        self.x, self.y = self.past_positions.pop(-1)
-        game.board[self.x][self.y] = self
-        game.history.pop(-1)
-        game.white_to_move = not game.white_to_move
+        # Past position was off the board : The piece has been placed
+        if (x, y) == (-1,-1):
+            # The piece was just placed on the board
+            self.player.pieces_placed.pop()
+            self.player.pieces_to_be_placed.add(self)
+
+            # We cancel the placement of the piece
+            game.board[self.x][self.y] = ''
+
+        # Current position is off the board : Means the piece has been captured
+        elif (self.x, self.y) == (-1, -1):
+            assert self.is_captured
+
+            self.player.pieces_captured.discard(self)
+            self.player.pieces_placed.add(self)
+            self.is_captured = False
+
+            # We put back the piece at its original position (before the capture)
+            game.board[x][y] = self
+        else:
+            # The piece was moved
+
+            # The clear the last position, and set the new one
+            if game.board[self.x][self.y] == self:
+                game.board[self.x][self.y] = ''
+            game.board[x][y] = self
+
+        self.x, self.y = x, y
+
+
 
     def __str__(self):
         return self.name
