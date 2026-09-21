@@ -4,7 +4,7 @@ from src.pieces.Piece import Piece
 
 class Strategeti:
     def __init__(self):
-        self.board = [['' for _ in range(4)] for _ in range(4)]
+        self.board = [[None for _ in range(4)] for _ in range(4)]
         self.position_set = {}
         self.database = {}
         self.player1 = Player.Player(True, self.database)
@@ -14,9 +14,12 @@ class Strategeti:
         self.history = []
         self.pieces_moved = []
 
+        # Keeps track of all the pieces captured
+        self.capture_counts = [0] * 8
+
     def remove_piece(self, x, y):
         piece = self.board[x][y]
-        self.board[x][y] = ''
+        self.board[x][y] = None
         return piece
 
     def show_board(self):
@@ -25,7 +28,7 @@ class Strategeti:
         for line in self.board:
             print("|", end=' ')
             for case in line:
-                if case == '':
+                if case is None:
                     case = " "
                 print(case, end=" | ")
             print()
@@ -33,7 +36,7 @@ class Strategeti:
         print()
 
     def play(self):
-        self.FEN_safety()
+        # self.FEN_safety()
         if self.check_winner():
             return True
 
@@ -75,7 +78,7 @@ class Strategeti:
                 finished = True
 
         if finished:
-            self.database.save_state(self.get_FEN_board(), finished, evaluation)
+            self.database.save_state(self.get_footprint(), finished, evaluation)
         return finished
 
     def make_move(self, move):
@@ -112,7 +115,7 @@ class Strategeti:
 
         :return:
         """
-        position = self.get_FEN_board()[:-1]
+        position = self.get_footprint_reduced()
         if position not in self.position_set:
             self.position_set[position] = 1
         else:
@@ -123,7 +126,7 @@ class Strategeti:
 
     def remove_position_from_set(self):
         self.draw = False
-        position = self.get_FEN_board()[:-1]
+        position = self.get_footprint_reduced()
         if position not in self.position_set:
             print(f"WARNING : Trying to remove position {position} from {self.history}. This should not happen.")
         elif self.position_set[position] == 1:
@@ -157,7 +160,7 @@ class Strategeti:
         board = []
         for row in self.board:
             for piece in row:
-                if piece == '':
+                if piece is None:
                     board.append("_")
                 else:
                     board.append(piece.__str__())
@@ -175,9 +178,91 @@ class Strategeti:
 
         for x in range(4):
             for y in range(4):
-                if self.board[x][y] != '':
+                if self.board[x][y] is not None:
                     assert self.board[x][y].get_coords() == (x, y)
 
+    def get_position_as_integer1(self):
+        """
+        The goal of this function is to find a modelisation which can store a position
+        with the fewest number of bytes. The modelisation is the following :
+
+        bit 0 = 0 : White to move
+        bit 1-2 : Number of times the position was reached
+
+            We then store an information on 6 bits for each piece
+            bit 0-1 (MSB, first bit of a word) :
+                - 00 : piece is placed on the board
+                - 01 : piece is yet to be placed
+                - 10 : piece is captured
+            bit 2-3 : x coordinate
+            bit 4-5 : y coordinate
+
+        Pieces order : E, G, L, Z, e, g, l, z
+
+        This takes at most 16x6=96 bits
+
+
+        :return:
+        """
+        pass
+
+    def get_position_as_integer2(self):
+        """
+        The goal of this function is to find a modelisation which can store a position
+        with the fewest number of bytes. The modelisation is the following :
+
+        bit 2 = 0 : White to move
+        bit 0-1 : Number of times the position was reached
+
+            We then store an information on 1 or 4 bits for each square :
+                - 0 for _
+                - 1xxx for a piece
+
+        Pieces order : E, G, L, Z, e, g, l, z, _
+
+        This requires at most 4x16 bits = 64 bits
+
+        We then store on 3 bits each captured piece
+
+        This requires at most 10x3 bits = 30 bits
+
+
+        :return:
+        """
+
+
+        # 1. White's turn = 0, Black's turn = 1
+        result = 0 if self.white_to_move else 1
+
+        # 2. The board
+        offset = 1
+        for x in range(4):
+            for y in range(4):
+                piece = self.board[x][y]
+                if piece is None:
+                    result |= 1 << offset
+                    offset += 1
+                else:
+                    result |= piece.piece_id << offset
+                    offset += 4
+
+        # 3. The captured pieces :
+        for piece_code, count in enumerate(self.capture_counts):
+            for _ in range(count):
+                result |= piece_code << offset
+                offset += 3
+
+        repetition = self.position_set.get(result, 0)
+        return (result << 2) + repetition
+
+
+    def get_footprint(self):
+        # return self.get_FEN_board()
+        return self.get_position_as_integer2()
+
+    def get_footprint_reduced(self):
+        # return self.get_FEN_board()[:-1]
+        return self.get_position_as_integer2() >> 2
 
     def get_board(self):
         return self.board

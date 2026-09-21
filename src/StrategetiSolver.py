@@ -33,7 +33,6 @@ try :
     game.play()
 except (Exception, KeyboardInterrupt) as e:
     # 4. We save the database state before quitting
-
     print(traceback.format_exc())
     print(f"Saving database : Database size : {len(storage.get_database())}, "
           f"New positions : {len(storage.get_database()) - init_size}")

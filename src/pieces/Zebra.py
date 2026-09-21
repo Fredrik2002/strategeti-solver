@@ -10,28 +10,28 @@ class Zebra(Piece):
 
         # Move to the left
         for i in range(self.x - 1, -1, -1):
-            if board[i][self.y] == '':
+            if board[i][self.y] is None:
                 list_legal_moves.append(("M", i, self.y, self))
             else:
                 break
 
         # Move to the right
         for i in range(self.x + 1, 4):
-            if board[i][self.y] == '':
+            if board[i][self.y] is None:
                 list_legal_moves.append(("M", i, self.y, self))
             else:
                 break
 
         # Move up
         for i in range(self.y - 1, -1, -1):
-            if board[self.x][i] == '':
+            if board[self.x][i] is None:
                 list_legal_moves.append(("M", self.x, i, self))
             else:
                 break
 
         # Move down
         for i in range(self.y + 1, 4):
-            if board[self.x][i] == '':
+            if board[self.x][i] is None:
                 list_legal_moves.append(("M", self.x, i, self))
             else:
                 break
@@ -48,7 +48,7 @@ class Zebra(Piece):
         list_legal_moves = []
         for coeff in range(1, 4):
             if (0 <= self.x + x_offset * coeff <= 3 and 0 <= self.y + y_offset * coeff <= 3
-                    and board[self.x + x_offset* coeff][self.y + y_offset* coeff] == ''):
+                    and board[self.x + x_offset* coeff][self.y + y_offset* coeff] is None):
                 list_legal_moves.append(("M", self.x + x_offset * coeff, self.y + y_offset* coeff, self))
             else:
                 break

@@ -1,6 +1,15 @@
 from abc import ABC, abstractmethod
 
-
+MAPPING_PIECE_INTEGER = {
+    "E" : 0,
+    "G" : 1,
+    "L" : 2,
+    "Z" : 3,
+    "e" : 4,
+    "g" : 5,
+    "l" : 6,
+    "z" : 7
+}
 
 class Piece(ABC):
     def __init__(self, name : str, player):
@@ -9,6 +18,7 @@ class Piece(ABC):
         else:
             self.name = name
 
+        self.piece_id = MAPPING_PIECE_INTEGER[self.name]
         self.is_captured = False
 
         # Piece is not yet on the board
@@ -32,6 +42,8 @@ class Piece(ABC):
 
         if (x, y) != (-1, -1):
             game.board[x][y] = self
+        else:
+            game.capture_counts[self.piece_id] += 1
 
         self.set_coords(x, y)
 
@@ -49,7 +61,7 @@ class Piece(ABC):
 
         # We clear the previous position
         if move_name in ["M", "C"]:
-            game.board[self.x][self.y] = ""
+            game.board[self.x][self.y] = None
 
         self.past_positions.append((self.x, self.y))
         self.x, self.y = x, y
@@ -65,7 +77,7 @@ class Piece(ABC):
             self.player.pieces_to_be_placed.add(self)
 
             # We cancel the placement of the piece
-            game.board[self.x][self.y] = ''
+            game.board[self.x][self.y] = None
 
         # Current position is off the board : Means the piece has been captured
         elif (self.x, self.y) == (-1, -1):
@@ -77,17 +89,19 @@ class Piece(ABC):
 
             # We put back the piece at its original position (before the capture)
             game.board[x][y] = self
+            game.capture_counts[self.piece_id] -= 1
         else:
             # The piece was moved
 
             # The clear the last position, and set the new one
             if game.board[self.x][self.y] == self:
-                game.board[self.x][self.y] = ''
+                game.board[self.x][self.y] = None
             game.board[x][y] = self
 
         self.x, self.y = x, y
 
-
+    def get_piece_id(self):
+        return self.piece_id
 
     def __str__(self):
         return self.name

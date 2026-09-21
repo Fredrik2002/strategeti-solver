@@ -18,10 +18,9 @@ class Elephant(Piece):
                 elephant = True
                 break
             # Empty square
-            elif isinstance(board[i][self.y], str):
-                if i != self.x - 1:
-                    break
-        if not elephant and self.x - 1 >= 0 and isinstance(board[self.x - 1][self.y], Piece):
+            elif board[i][self.y] is None:
+                break
+        if not elephant and self.x - 1 >= 0 and board[self.x - 1][self.y] is not None:
             list_legal_moves.append(("Push Up", self.x - 1, self.y, self))
 
         # Push down
@@ -33,11 +32,10 @@ class Elephant(Piece):
                 elephant = True
                 break
             # Empty square
-            elif isinstance(board[i][self.y], str):
-                if i != self.x + 1:
-                    break
+            elif board[i][self.y] is None:
+                break
         # Elephant check passed, and piece next to the elephant
-        if not elephant and self.x + 1 <= 3 and isinstance(board[self.x + 1][self.y], Piece):
+        if not elephant and self.x + 1 <= 3 and board[self.x + 1][self.y] is not None:
             list_legal_moves.append(("Push Down", self.x + 1, self.y, self))
 
         # Push left
@@ -49,11 +47,10 @@ class Elephant(Piece):
                 elephant = True
                 break
             # Empty square
-            elif isinstance(board[self.x][i], str):
-                if i != self.y - 1:
-                    break
+            elif board[self.x][i] is None:
+                break
         # Elephant check passed, and piece next to the elephant
-        if not elephant and self.y - 1 >= 0 and isinstance(board[self.x][self.y - 1], Piece):
+        if not elephant and self.y - 1 >= 0 and board[self.x][self.y - 1] is not None:
             list_legal_moves.append(("Push Left", self.x, self.y - 1, self))
 
         # Push right
@@ -65,11 +62,10 @@ class Elephant(Piece):
                 elephant = True
                 break
             # Empty square
-            elif isinstance(board[self.x][i], str):
-                if i != self.y + 1:
-                    break
+            elif board[self.x][i] is None:
+                break
         # Elephant check passed, and piece next to the elephant
-        if not elephant and self.y + 1 <= 3 and isinstance(board[self.x][self.y + 1], Piece):
+        if not elephant and self.y + 1 <= 3 and board[self.x][self.y + 1] is not None:
             list_legal_moves.append(("Push Right", self.x, self.y + 1, self))
 
         return list_legal_moves
@@ -93,19 +89,19 @@ class Elephant(Piece):
             super().make_move(game, move)
 
     def _push_iteration(self, x_range, y_range, game):
-        game.board[self.x][self.y] = ''
+        game.board[self.x][self.y] = None
 
         # We start by moving the elephant
         next_piece = self
         for x, y in zip(x_range, y_range):
             current_piece = next_piece
-            if current_piece == '':
+            if current_piece is None:
                 break
             next_piece = game.board[x][y]
             current_piece.set_coords_and_game(x, y, game)
 
         # If the last piece is pushed off the board
-        if next_piece != '':
+        if next_piece is not None:
             next_piece.set_coords_and_game(-1, -1, game)
 
 

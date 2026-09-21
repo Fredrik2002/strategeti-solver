@@ -28,7 +28,7 @@ class Player:
         for piece in self.piece_set():
             for x in range(4):
                 for y in range(4):
-                    if (x not in [0, 3] or y not in [0, 3]) and board[x][y] == '':
+                    if (x not in [0, 3] or y not in [0, 3]) and board[x][y] is None:
                         list_possible_moves.append(("Place", x, y, piece))
 
         for piece in self.pieces_placed:
@@ -53,11 +53,12 @@ class Player:
         for i, move in enumerate(possible_moves):
             game.make_move(move)
 
-            if len(game.history) <= 100:
+            if len(game.history) <= 50:
                 print("Depth : " + str(len(game.history)))
                 print(f"Move {i + 1}/{len(possible_moves)}")
 
-            fen = game.get_FEN_board()
+            fen = game.get_footprint()
+
             # We keep the game going if we don't know the evaluation of this position
             if fen not in self.position_storage.get_database():
                 game.play()
@@ -85,7 +86,7 @@ class Player:
                 best_move = move
                 best_eval = evaluation
 
-        self.position_storage.save_state(game.get_FEN_board(), False, self.next_eval(best_eval))
+        self.position_storage.save_state(game.get_footprint(), False, self.next_eval(best_eval))
 
 
     def update_pieces(self):
