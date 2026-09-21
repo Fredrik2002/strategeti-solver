@@ -1,8 +1,5 @@
-import random
-
-import Player
-from Pieces.Piece import Piece
-from PositionStorage import PositionStorage
+from src.utils import Player
+from src.pieces.Piece import Piece
 
 
 class Strategeti:
@@ -55,25 +52,25 @@ class Strategeti:
         finished = False
         evaluation = None
         if len(self.player1.pieces_captured) == 5:
-            print("Black won : 5 captures")
+            # print("Black won : 5 captures")
             evaluation = "Black"
             finished = True
         elif len(self.player2.pieces_captured) == 5:
-            print("White won : 5 captures")
+            # print("White won : 5 captures")
             evaluation = "White"
             finished = True
         elif self.draw:
-            print("Draw : 3 times repetition")
+            # print("Draw : 3 times repetition")
             evaluation = 0
             finished = True
         elif self.white_to_move:
             if len(self.player1.get_legal_moves(self.board)) == 0:
-                print("Black won : White out of moves")
+                # print("Black won : White out of moves")
                 evaluation = "Black"
                 finished = True
         else:
             if len(self.player2.get_legal_moves(self.board)) == 0:
-                print("White won : Black out of moves")
+                # print("White won : Black out of moves")
                 evaluation = "White"
                 finished = True
 

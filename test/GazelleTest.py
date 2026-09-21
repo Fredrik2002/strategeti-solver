@@ -1,8 +1,8 @@
-from Pieces.Elephant import Elephant
-from Pieces.Gazelle import Gazelle
-from Pieces.Lion import Lion
-from Strategeti import Strategeti
-from Pieces.Zebra import Zebra
+from src.pieces.Elephant import Elephant
+from src.pieces.Gazelle import Gazelle
+from src.pieces.Lion import Lion
+from src.utils.Strategeti import Strategeti
+from src.pieces.Zebra import Zebra
 
 game = Strategeti()
 player = game.player1

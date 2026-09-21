@@ -1,10 +1,6 @@
-from Pieces.Elephant import Elephant
-from Pieces.Gazelle import Gazelle
-from Pieces.Lion import Lion
-from Pieces.Zebra import Zebra
-from Player import Player
-from PositionStorage import PositionStorage
-from Strategeti import Strategeti
+from src.pieces.Lion import Lion
+from src.pieces import Zebra
+from src.utils.Strategeti import Strategeti
 
 game = Strategeti()
 player = game.player1
@@ -21,7 +17,7 @@ assert lion in player.pieces_to_be_placed
 assert not lion in player.pieces_placed
 assert lion.past_positions == []
 
-# Case 2 : Pieces near, push in all 4 directions
+# Case 2 : pieces near, push in all 4 directions
 game = Strategeti()
 player = game.player1
 lion = player.get_free_piece(Lion(player))

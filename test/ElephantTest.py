@@ -1,9 +1,7 @@
-from Pieces.Elephant import Elephant
-from Pieces.Gazelle import Gazelle
-from Pieces.Lion import Lion
-from Player import Player
-from PositionStorage import PositionStorage
-from Strategeti import Strategeti
+from src.pieces.Elephant import Elephant
+from src.pieces.Gazelle import Gazelle
+from src.pieces.Lion import Lion
+from src.utils.Strategeti import Strategeti
 
 game = Strategeti()
 player = game.player1
@@ -19,7 +17,7 @@ assert elephant.past_positions == []
 assert elephant in elephant.player.pieces_to_be_placed
 assert not elephant in elephant.player.pieces_placed
 
-# Case 2 : Pieces near, push in all 4 directions
+# Case 2 : pieces near, push in all 4 directions
 game.make_move(("Place", 1, 2, elephant))
 game.make_move(("Place", 1,1, Gazelle(player)))
 game.make_move(("Place", 1,3, Gazelle(player)))

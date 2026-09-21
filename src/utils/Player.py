@@ -1,13 +1,8 @@
-import copy
-import random
-
-import PositionStorage
-import Strategeti
-from Pieces.Elephant import Elephant
-from Pieces.Gazelle import Gazelle
-from Pieces.Lion import Lion
-from Pieces.Piece import Piece
-from Pieces.Zebra import Zebra
+from src.utils import PositionStorage
+from src.pieces.Elephant import Elephant
+from src.pieces.Gazelle import Gazelle
+from src.pieces.Lion import Lion
+from src.pieces.Zebra import Zebra
 
 
 class Player:
@@ -55,29 +50,23 @@ class Player:
         move_to_position_dict = {}
         possible_moves = self.get_legal_moves(game.get_board())
 
-        for move in possible_moves:
-            game.FEN_safety()
+        for i, move in enumerate(possible_moves):
             game.make_move(move)
-            game.FEN_safety()
 
-            print("Depth : " + str(len(game.history)))
+            if len(game.history) <= 100:
+                print("Depth : " + str(len(game.history)))
+                print(f"Move {i + 1}/{len(possible_moves)}")
 
             fen = game.get_FEN_board()
             # We keep the game going if we don't know the evaluation of this position
             if fen not in self.position_storage.get_database():
                 game.play()
-            else:
-                print("Known position : " + fen)
             move_to_position_dict[move] = self.position_storage.get_database()[fen]
-            print(move, fen)
 
             # We go back to the original position
-            game.FEN_safety()
             game.cancel_move()
-            game.FEN_safety()
 
 
-        print("New position solved")
         self.evaluate_and_save(game, move_to_position_dict)
 
     def evaluate_and_save(self, game, move_to_position_dict):

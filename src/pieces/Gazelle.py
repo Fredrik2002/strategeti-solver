@@ -1,4 +1,4 @@
-from Pieces.Piece import Piece
+from src.pieces.Piece import Piece
 
 
 class Gazelle(Piece):
