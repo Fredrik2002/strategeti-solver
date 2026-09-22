@@ -1,5 +1,5 @@
 """
-The test class to call to start the solving of the game
+The tests class to call to start the solving of the game
 """
 
 import json
@@ -16,13 +16,13 @@ storage = PositionStorage()
 init_size = 0
 
 # 1. We load the database if it exists
-if os.path.exists("../test/database.pkl"):
+if os.path.exists("../tests/database.pkl"):
     print("Loading database...")
     storage.load_database()
     init_size = len(storage.positions)
     print(f"Database of {init_size} elements successfully loaded")
 else:
-    print("Cannot find database at ../test/database.pkl. Restarting the solving from scratch.")
+    print("Cannot find database at ../tests/database.pkl. Restarting the solving from scratch.")
 
 # 2. We create the game instance
 game = Strategeti()

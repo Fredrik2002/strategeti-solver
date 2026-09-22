@@ -35,42 +35,54 @@ or to move an existing one
 
 ## 🚀 Utilisation
 
-- StrategiTest solves the game using previously known positions in database.json. 
+- StrategetiTest solves the game using previously known positions in database.json. 
 Removing or cleaning the file starts the soling from scratch
 
 
-## 📁 Structure du projet
+## 📁 Project structure
 
 ```text
 projet/
 ├── src/
-│   ├── main.cpp
-│   └── ...
-├── include/
-│   └── ...
+│   ├── pieces/
+│   │     ├── Piece.py
+│   │     ├── Elephant.py
+│   │     ├── Gazelle.py
+│   │     ├── Lion.py
+│   │     └── Zebra.py
+│   ├── utils/
+│   │     ├── Player.py
+│   │     ├── PositionStorage.py
+│   │     └── Strategeti.py
+│   └── StrategetiSolver.py
 ├── tests/
-│   └── ...
-├── README.md
-└── CMakeLists.txt
+│   ├── BenchmarkDatabase.py
+│   ├── ElephantTest.py
+│   ├── GazelleTest.py
+│   └── LionTest.py
+└── README.md
 ```
 
 
 ## 📋 To do List :
-- ### Database performance analysis.
+- ### Performance improvements : The 2 major weak points are :
+  - `get_position_as_integer2` : **40% of total running time**. Used to translate a position into an integer. It is called at each call to the database.
+An improvement would be to modify the integer on each move instead of recreating it from scratch
+  - `Gazelle.get_legal_moves` : **18.5% of total running time**. Used to compute the legal moves for a gazelle
+at a given position. The complexity of the gazelle movements makes it hard to compute.
+- ### Database storage efficiency :
+  - Positions are stored in the database in a ~70 bits integer. The database is stored as python dictionary
+dumped using `pickle`. Finding a way to represent a position with 64 bits or less should decently reduce
+the disk size of the database (as well as the loading/dumping time ?)
+- ### Symmetrical positions
+  - There are 4 symmetry axes, due to the fact that we play on a 4x4 board, 
+and the movement of the pieces is symmetrical. 
+Which means that when a position is solved, it is also solved
+for all its symmetric variants. 
+However, this might divide the number of position by 4, and increase the database size
+by as much. The gain might not be good enough.
+The whole tree search needs to be optimized to not reach any symetrical positions
 
-At the moment, database is stored as a dictionary dumped into a pickle file. On a 14M element DB :
-
-| --- | JSON | Pickle (Highest protocol) |
-| --- | --- |---------------------------|
-| Loading time (in s) | 45.18 ❌| 36.11 ✅                   | 
-| Dumping time (in s) | 80.29 ❌| 19.69 ✅                   | 
-| DB size (in Mb) |   663.8 ❌| 543.3 ✅                   | 
-| Readibility | ✅ | ❌                         |
-
-The main goal is to reduce the size of the DB, which will reduce loading time. 
-The positions are currently stored as a string such as `0|GGLLZglzz|ZE___gE__e_l__e_1`. A first study would be 
-to store such a string into an integer. That should drastically reduce the database size on the disk, but the loading step
-will need to convert back every key integer entry into a string. It is unclear whether this is worth it or not
 
 
 

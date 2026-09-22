@@ -16,9 +16,9 @@ class PositionStorage:
         return self.positions
 
     def save_database(self):
-        with open("../test/database.pkl", "wb") as f:
+        with open("../tests/database.pkl", "wb") as f:
             pickle.dump(self.positions, f, protocol=pickle.HIGHEST_PROTOCOL)
 
     def load_database(self):
-        with open("../test/database.pkl", "rb") as f:
+        with open("../tests/database.pkl", "rb") as f:
             self.positions = pickle.load(f)
