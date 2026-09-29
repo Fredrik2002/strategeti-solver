@@ -5,7 +5,7 @@ from src.pieces.Piece import Piece
 class Strategeti:
     def __init__(self):
         self.board = [[None for _ in range(4)] for _ in range(4)]
-        self.position_set = {}
+        self.position_set = set()
         self.database = {}
         self.player1 = Player.Player(True, self.database)
         self.player2 = Player.Player(False, self.database)
@@ -36,7 +36,6 @@ class Strategeti:
         print()
 
     def play(self):
-        # self.FEN_safety()
         if self.check_winner():
             return True
 
@@ -55,31 +54,25 @@ class Strategeti:
         finished = False
         evaluation = None
         if len(self.player1.pieces_captured) == 5:
-            # print("Black won : 5 captures")
             evaluation = "Black"
             finished = True
         elif len(self.player2.pieces_captured) == 5:
-            # print("White won : 5 captures")
             evaluation = "White"
             finished = True
         elif self.draw:
-            # print("Draw : 3 times repetition")
             evaluation = 0
-            finished = True
         elif self.white_to_move:
             if len(self.player1.get_legal_moves(self.board)) == 0:
-                # print("Black won : White out of moves")
                 evaluation = "Black"
                 finished = True
         else:
             if len(self.player2.get_legal_moves(self.board)) == 0:
-                # print("White won : Black out of moves")
                 evaluation = "White"
                 finished = True
 
         if finished:
             self.database.save_state(self.get_footprint(), finished, evaluation)
-        return finished
+        return finished or self.draw
 
     def make_move(self, move):
         self.pieces_moved.append([])
@@ -115,24 +108,15 @@ class Strategeti:
 
         :return:
         """
-        position = self.get_footprint_reduced()
-        if position not in self.position_set:
-            self.position_set[position] = 1
+        position = self.get_footprint()
+        if position in self.position_set:
+            self.draw = True
         else:
-            self.position_set[position] += 1
-            # If the position repeats 3 times, the game is declared draw
-            if self.position_set[position] == 3:
-                self.draw = True
+            self.position_set.add(self.get_footprint())
 
     def remove_position_from_set(self):
         self.draw = False
-        position = self.get_footprint_reduced()
-        if position not in self.position_set:
-            print(f"WARNING : Trying to remove position {position} from {self.history}. This should not happen.")
-        elif self.position_set[position] == 1:
-            self.position_set.pop(position)
-        else:
-            self.position_set[position] -= 1
+        self.position_set.discard(self.get_footprint())
 
 
     def get_FEN_board(self):
@@ -252,17 +236,12 @@ class Strategeti:
                 result |= piece_code << offset
                 offset += 3
 
-        repetition = self.position_set.get(result, 0)
-        return (result << 2) + repetition
+        return result
 
 
     def get_footprint(self):
         # return self.get_FEN_board()
         return self.get_position_as_integer2()
-
-    def get_footprint_reduced(self):
-        # return self.get_FEN_board()[:-1]
-        return self.get_position_as_integer2() >> 2
 
     def get_board(self):
         return self.board

@@ -1,8 +1,11 @@
+import logging
+
 from src.utils import PositionStorage
 from src.pieces.Elephant import Elephant
 from src.pieces.Gazelle import Gazelle
 from src.pieces.Lion import Lion
 from src.pieces.Zebra import Zebra
+import datetime
 
 
 class Player:
@@ -53,16 +56,23 @@ class Player:
         for i, move in enumerate(possible_moves):
             game.make_move(move)
 
-            if len(game.history) <= 50:
-                print("Depth : " + str(len(game.history)))
-                print(f"Move {i + 1}/{len(possible_moves)}")
+            if len(game.history) % 100 == 0:
+                logging.info(f"Timestamp : {datetime.datetime.now()} ")
+                logging.info("Depth : " + str(len(game.history)))
+                logging.info(f"Move {i + 1}/{len(possible_moves)}")
+
+                if len(game.history) > 5000 :
+                    logging.debug(game.history)
 
             fen = game.get_footprint()
 
-            # We keep the game going if we don't know the evaluation of this position
-            if fen not in self.position_storage.get_database():
-                game.play()
-            move_to_position_dict[move] = self.position_storage.get_database()[fen]
+            # Unless it's a draw, We keep the game going if we don't know the evaluation of this position
+            if game.draw:
+                move_to_position_dict[move] = True, 0
+            else:
+                if fen not in self.position_storage.get_database():
+                    game.play()
+                move_to_position_dict[move] = self.position_storage.get_database()[fen]
 
             # We go back to the original position
             game.cancel_move()
