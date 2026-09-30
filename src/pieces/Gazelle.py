@@ -1,4 +1,5 @@
 from src.pieces.Piece import Piece
+from src.utils.Constants import NEIGHBOOR, NEIGHBOORS_DESTINATION
 
 
 class Gazelle(Piece):
@@ -16,30 +17,30 @@ class Gazelle(Piece):
             x, y = position_stack.pop()
 
             # The list of offsets in which a jump could be possible
-            possible_jump = []
-            for x_offset in range(-1, 2):
-                for y_offset in range(-1, 2):
-                    new_x, new_y = x + x_offset, y + y_offset
-                    if 0 <= new_x <= 3 and 0 <= new_y <= 3:
-                        piece = board[new_x][new_y]
-                        if piece is not game.empty_square and piece is not self:
-                            # Possible jump
-                            possible_jump.append((x_offset, y_offset, 2))
+            for x_offset, y_offset in NEIGHBOOR[x][y]:
 
-            while possible_jump:
-                x_offset, y_offset, coeff = possible_jump.pop()
+                # The 3 neighboors, when going in direction (x_offset, y_offset) from (x, y)
+                # n1 and n2 are garanteed to be not None (otherwise, no jump possible)
+                n1, n2, n3 = NEIGHBOORS_DESTINATION[x][y][x_offset][y_offset]
+                p1, p2 = board[n1[0]][n1[1]], board[n2[0]][n2[1]]
+                p3 = None if n3 is None else board[n3[0]][n3[1]]
 
-                new_x, new_y = x + x_offset * coeff, y + y_offset * coeff
+                # You can't jump over empty squares, nor yourself
+                if p1 is not game.empty_square and p1 is not self:
+                    # Jump is possible
+                    if p2 is game.empty_square and n2 not in visited:
+                        # Square must be empty
+                        # 2 squares jump
+                        position_stack.append(n2)
+                        list_legal_moves.append(("M", *n2, self))
+                        visited.add(n2)
+                    elif (p2 is not self and p2 is not game.empty_square
+                          and p3 is game.empty_square and n3 not in visited):
+                        # 3 squares jump
+                        position_stack.append(n3)
+                        list_legal_moves.append(("M", *n3, self))
+                        visited.add(n3)
 
-                if 0 <= new_x <= 3 and 0 <= new_y <= 3:
-                    piece = board[new_x][new_y]
-                    if piece is not game.empty_square and piece is not self:
-                        # Bigger jump possible
-                        possible_jump.append((x_offset, y_offset, coeff + 1))
-                    elif (new_x, new_y) not in visited:
-                        position_stack.append((new_x, new_y))
-                        list_legal_moves.append(("M", new_x, new_y, self))
-                        visited.add((new_x, new_y))
 
 
         return list_legal_moves

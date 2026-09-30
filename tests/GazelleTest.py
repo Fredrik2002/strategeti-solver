@@ -19,12 +19,12 @@ assert gazelle.get_legal_moves(game) == [('M', 3, 2, gazelle)], gazelle.get_lega
 # Case 3 : Lower & left jump available
 game.make_move(("Place", 1,1, Zebra(player)))
 game.make_move(("Place", 1,3, Zebra(player)))
-assert gazelle.get_legal_moves(game) == [('M', 3, 2, gazelle), ('M', 1, 0, gazelle)]
+assert set(gazelle.get_legal_moves(game)) == {('M', 3, 2, gazelle), ('M', 1, 0, gazelle)}
 
 
 # Case 4 : Multiple jumps
 game.make_move(("Place", 2, 0, Zebra(player)))
-assert gazelle.get_legal_moves(game) == [('M', 3, 2, gazelle), ('M', 1, 0, gazelle), ('M', 3, 0, gazelle)], gazelle.get_legal_moves(game)
+assert set(gazelle.get_legal_moves(game)) == {('M', 3, 2, gazelle), ('M', 1, 0, gazelle), ('M', 3, 0, gazelle)}, gazelle.get_legal_moves(game)
 
 # Case 5
 game = Strategeti()
@@ -34,7 +34,7 @@ game.make_move(("Place", 3, 2, gazelle))
 game.make_move(("Place", 2, 2, Zebra(player)))
 game.make_move(("Place", 1, 2, Zebra(player)))
 game.make_move(("Place", 2, 1, Zebra(player)))
-assert gazelle.get_legal_moves(game) == [('M', 0, 2, gazelle), ('M', 1, 0, gazelle)], gazelle.get_legal_moves(game)
+assert set(gazelle.get_legal_moves(game)) == {('M', 0, 2, gazelle), ('M', 1, 0, gazelle)}, gazelle.get_legal_moves(game)
 
 # Case 6
 game = Strategeti()
