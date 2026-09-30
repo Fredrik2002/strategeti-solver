@@ -1,6 +1,6 @@
 import logging
 
-from src.pieces.Constants import SQUARES_INDICES_NO_CORNER
+from src.utils.Constants import SQUARES_INDICES_NO_CORNER
 from src.utils import PositionStorage
 from src.pieces.Elephant import Elephant
 from src.pieces.Gazelle import Gazelle
@@ -30,10 +30,10 @@ class Player:
     def get_legal_moves(self, game):
         list_possible_moves = []
         for piece in self.piece_set():
-            for square in SQUARES_INDICES_NO_CORNER:
+            for x, y in SQUARES_INDICES_NO_CORNER:
                 # Rules don't allow piece placement in the corners
-                if game.board[square] is game.empty_square:
-                    list_possible_moves.append(("Place", square // 4, square % 4, piece))
+                if game.board[x][y] is game.empty_square:
+                    list_possible_moves.append(("Place", x, y, piece))
 
         for piece in self.pieces_placed:
             list_possible_moves.extend(piece.get_legal_moves(game))
@@ -73,6 +73,7 @@ class Player:
             else:
                 if fen not in self.position_storage.get_database():
                     game.play()
+
                 move_to_position_dict[move] = self.position_storage.get_database()[fen]
 
             # We go back to the original position

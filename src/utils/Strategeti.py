@@ -22,7 +22,11 @@ class Strategeti:
         self.empty_square = EmptySquare(self.player1)
 
         # Board flatten, row-major
-        self.board = [self.empty_square] * 16
+        self.board = [[self.empty_square for _ in range(4)] for _ in range(4)]
+
+        # We store the footprint to not recreating it from scratch at each move
+        self.footprint = 0
+        self.footprint_ok = False
 
     def show_board(self):
         print(self.get_FEN_board())
@@ -92,7 +96,8 @@ class Strategeti:
         self.history.append(move)
 
     def cancel_move(self):
-        self.history.pop()
+        move = self.history.pop()
+        self.footprint_ok = move[0] == "M"
 
         self.remove_position_from_set()
 
@@ -101,6 +106,11 @@ class Strategeti:
         pieces_moved : list[Piece] = self.pieces_moved.pop()
         for piece_moved in pieces_moved:
             piece_moved.cancel_move(self)
+
+        if not self.footprint_ok:
+            # We recompute the footprint
+            self.get_footprint()
+            self.footprint_ok = True
 
     def add_position_to_set(self):
         """
@@ -142,7 +152,6 @@ class Strategeti:
         captured = "".join(sorted(captured_p1 + captured_p2))
 
         board = []
-        # FIXME : Board is now flat
         for row in self.board:
             for piece in row:
                 if piece is None:
@@ -163,8 +172,8 @@ class Strategeti:
 
         for x in range(4):
             for y in range(4):
-                if self.board[x * 4 + y] is not None:
-                    assert self.board[x * 4 + y].get_coords() == (x, y)
+                if self.board[x][y] is not self.empty_square:
+                    assert self.board[x][y].get_coords() == (x, y)
 
     def get_position_as_integer1(self):
         """
@@ -196,16 +205,11 @@ class Strategeti:
         The goal of this function is to find a modelisation which can store a position
         with the fewest number of bytes. The modelisation is the following :
 
-        bit 2 = 0 : White to move
-        bit 0-1 : Number of times the position was reached
+        bit 0 = 0 : White to move
 
-            We then store an information on 1 or 4 bits for each square :
-                - 0 for _
-                - 1xxx for a piece
+            We then store an information on 4 bits for each square (see MAPPING_PIECE_INTEGER)
 
-        Pieces order : E, G, L, Z, e, g, l, z, _
-
-        This requires at most 4x16 bits = 64 bits
+        This requires exactly 4x16 bits = 64 bits
 
         We then store on 3 bits each captured piece
 
@@ -221,22 +225,30 @@ class Strategeti:
 
         # 2. The board
         offset = 1
-        for piece in self.board:
-            result |= piece.piece_id << offset
-            offset += 4
+        for row in self.board:
+            for piece in row:
+                result |= piece.piece_id << offset
+                offset += 4
 
         # 3. The captured pieces :
         for piece_code, count in enumerate(self.capture_counts):
             for _ in range(count):
                 result |= piece_code << offset
-                offset += 3
+                offset += 4
 
         return result
 
 
     def get_footprint(self):
         # return self.get_FEN_board()
-        return self.get_position_as_integer2()
+        if not self.footprint_ok:
+            self.footprint = self.get_position_as_integer2()
+
+        return self.footprint
+
+    def print_footprint(self):
+        res = self.footprint >> 1
+        print(hex(res))
 
     def get_board(self):
         return self.board

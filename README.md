@@ -66,17 +66,19 @@ projet/
 ## 🏎️ Benchmark :
 
 - ### 🌳 Tree search global efficiency :
-| Date      | Number of position solved | Duration (in s) | Ratio (avg number of position solved per second |
-|-----------|--------------------------:|----------------:|------------------------------------------------:|
-| 29/09     |                   376 482 |          60.201 |                                           6 253 
+| Date  | Number of position solved | Duration (in s) | Ratio (avg number of position solved per second | Improvements                        |
+|-------|--------------------------:|----------------:|------------------------------------------------:|-------------------------------------|
+| 29/09 |                   376 482 |          60.201 |                                           6 253 |                                     |
+| 30/09 |                   502 941 |          60.758 |                                           8 277 | Modify the FEN on the fly for 'Move' |
 
 - ### 🔧 Function calls efficiency :
 | Function name | Number of call | Percentage of total running time |
 |---------------|---------------:|---------------------------------:|
-| Strategeti.py:193(get_position_as_integer2)   |        20111030 |  35.5%
-| Gazelle.py:9(get_legal_moves)   |        2198161 |  20.8%
-| Player.py:52(make_move)   |        801515 |  4.4%
-| Elephant.py:9(get_legal_moves)   |        3212168 |  2.6%
+| Strategeti.py:193(get_position_as_integer2)   |        1304026 |  14.7%
+| Gazelle.py:9(get_legal_moves)   |        174631 |  11.2%
+| Elephant.py:9(get_legal_moves)   |        716096 |  5.0%
+| Player.py:52(make_move)   |        178996 |  5.0%
+
 
 ## 📋 To do List :
 - ### Performance improvements : The 2 major weak points are :

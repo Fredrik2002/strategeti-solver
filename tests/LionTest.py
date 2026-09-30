@@ -41,5 +41,5 @@ assert zebra.get_coords() == (3, 0)
 assert not zebra.is_captured
 assert not zebra in player.pieces_captured
 assert zebra in player.pieces_placed
-assert game.board[3 * 4 + 0] == zebra
+assert game.board[3][0] == zebra
 

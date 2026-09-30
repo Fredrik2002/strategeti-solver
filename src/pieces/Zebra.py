@@ -11,28 +11,28 @@ class Zebra(Piece):
 
         # Move to the left
         for i in range(self.x - 1, -1, -1):
-            if board[i * 4 + self.y] is game.empty_square:
+            if board[i][self.y] is game.empty_square:
                 list_legal_moves.append(("M", i, self.y, self))
             else:
                 break
 
         # Move to the right
         for i in range(self.x + 1, 4):
-            if board[i * 4 + self.y] is game.empty_square:
+            if board[i][self.y] is game.empty_square:
                 list_legal_moves.append(("M", i, self.y, self))
             else:
                 break
 
         # Move up
         for i in range(self.y - 1, -1, -1):
-            if board[self.x * 4 + i] is game.empty_square:
+            if board[self.x][i] is game.empty_square:
                 list_legal_moves.append(("M", self.x, i, self))
             else:
                 break
 
         # Move down
         for i in range(self.y + 1, 4):
-            if board[self.x * 4 + i] is game.empty_square:
+            if board[self.x][i] is game.empty_square:
                 list_legal_moves.append(("M", self.x, i, self))
             else:
                 break
@@ -50,8 +50,8 @@ class Zebra(Piece):
         list_legal_moves = []
         for coeff in range(1, 4):
             if (0 <= self.x + x_offset * coeff <= 3 and 0 <= self.y + y_offset * coeff <= 3
-                    and board[(self.x + x_offset * coeff) * 4 + self.y + y_offset * coeff] is game.empty_square):
-                list_legal_moves.append(("M", self.x + x_offset * coeff, self.y + y_offset* coeff, self))
+                    and board[self.x + x_offset * coeff][self.y + y_offset * coeff] is game.empty_square):
+                list_legal_moves.append(("M", self.x + x_offset * coeff, self.y + y_offset * coeff, self))
             else:
                 break
         return list_legal_moves
