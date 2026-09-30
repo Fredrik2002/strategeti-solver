@@ -1,10 +1,11 @@
+from src.pieces.EmptySquare import EmptySquare
 from src.utils import Player
 from src.pieces.Piece import Piece
 
 
 class Strategeti:
     def __init__(self):
-        self.board = [[None for _ in range(4)] for _ in range(4)]
+
         self.position_set = set()
         self.database = {}
         self.player1 = Player.Player(True, self.database)
@@ -17,20 +18,19 @@ class Strategeti:
         # Keeps track of all the pieces captured
         self.capture_counts = [0] * 8
 
-    def remove_piece(self, x, y):
-        piece = self.board[x][y]
-        self.board[x][y] = None
-        return piece
+        # Creates an empty square object to be placed in every
+        self.empty_square = EmptySquare(self.player1)
+
+        # Board flatten, row-major
+        self.board = [self.empty_square] * 16
 
     def show_board(self):
         print(self.get_FEN_board())
         print("-----------------")
-        for line in self.board:
-            print("|", end=' ')
-            for case in line:
-                if case is None:
-                    case = " "
-                print(case, end=" | ")
+        for i, case in enumerate(self.board):
+            if i % 4 == 0:
+                print("|", end=' ')
+            print(case, end=" | ")
             print()
             print("-----------------")
         print()
@@ -62,11 +62,11 @@ class Strategeti:
         elif self.draw:
             evaluation = 0
         elif self.white_to_move:
-            if len(self.player1.get_legal_moves(self.board)) == 0:
+            if len(self.player1.get_legal_moves(self)) == 0:
                 evaluation = "Black"
                 finished = True
         else:
-            if len(self.player2.get_legal_moves(self.board)) == 0:
+            if len(self.player2.get_legal_moves(self)) == 0:
                 evaluation = "White"
                 finished = True
 
@@ -142,6 +142,7 @@ class Strategeti:
         captured = "".join(sorted(captured_p1 + captured_p2))
 
         board = []
+        # FIXME : Board is now flat
         for row in self.board:
             for piece in row:
                 if piece is None:
@@ -162,8 +163,8 @@ class Strategeti:
 
         for x in range(4):
             for y in range(4):
-                if self.board[x][y] is not None:
-                    assert self.board[x][y].get_coords() == (x, y)
+                if self.board[x * 4 + y] is not None:
+                    assert self.board[x * 4 + y].get_coords() == (x, y)
 
     def get_position_as_integer1(self):
         """
@@ -220,15 +221,9 @@ class Strategeti:
 
         # 2. The board
         offset = 1
-        for x in range(4):
-            for y in range(4):
-                piece = self.board[x][y]
-                if piece is None:
-                    result |= 1 << offset
-                    offset += 1
-                else:
-                    result |= piece.piece_id << offset
-                    offset += 4
+        for piece in self.board:
+            result |= piece.piece_id << offset
+            offset += 4
 
         # 3. The captured pieces :
         for piece_code, count in enumerate(self.capture_counts):

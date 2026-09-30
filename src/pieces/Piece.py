@@ -8,7 +8,8 @@ MAPPING_PIECE_INTEGER = {
     "e" : 4,
     "g" : 5,
     "l" : 6,
-    "z" : 7
+    "z" : 7,
+    " " : 15
 }
 
 class Piece(ABC):
@@ -41,7 +42,7 @@ class Piece(ABC):
         game.pieces_moved[-1].append(self)
 
         if (x, y) != (-1, -1):
-            game.board[x][y] = self
+            game.board[x * 4 + y] = self
         else:
             game.capture_counts[self.piece_id] += 1
 
@@ -51,17 +52,17 @@ class Piece(ABC):
         return self.x, self.y
 
     @abstractmethod
-    def get_legal_moves(self, board : list[list[str]]):
+    def get_legal_moves(self, game):
         pass
 
     def make_move(self, game, move : tuple[str, int , int, None]):
         move_name, x, y, _ = move
-        game.board[x][y] = self
+        game.board[x * 4 + y] = self
         game.pieces_moved[-1].append(self)
 
         # We clear the previous position
         if move_name in ["M", "C"]:
-            game.board[self.x][self.y] = None
+            game.board[self.x * 4 + self.y] = game.empty_square
 
         self.past_positions.append((self.x, self.y))
         self.x, self.y = x, y
@@ -77,7 +78,7 @@ class Piece(ABC):
             self.player.pieces_to_be_placed.add(self)
 
             # We cancel the placement of the piece
-            game.board[self.x][self.y] = None
+            game.board[self.x * 4 + self.y] = game.empty_square
 
         # Current position is off the board : Means the piece has been captured
         elif (self.x, self.y) == (-1, -1):
@@ -88,15 +89,15 @@ class Piece(ABC):
             self.is_captured = False
 
             # We put back the piece at its original position (before the capture)
-            game.board[x][y] = self
+            game.board[x * 4 + y] = self
             game.capture_counts[self.piece_id] -= 1
         else:
             # The piece was moved
 
             # The clear the last position, and set the new one
-            if game.board[self.x][self.y] == self:
-                game.board[self.x][self.y] = None
-            game.board[x][y] = self
+            if game.board[self.x * 4 + self.y] == self:
+                game.board[self.x * 4 + self.y] = game.empty_square
+            game.board[x * 4 + y] = self
 
         self.x, self.y = x, y
 

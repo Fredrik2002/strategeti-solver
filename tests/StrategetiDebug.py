@@ -1,5 +1,6 @@
 import copy
 
+
 from src.pieces.Elephant import Elephant
 from src.pieces.Gazelle import Gazelle
 from src.utils.Strategeti import Strategeti

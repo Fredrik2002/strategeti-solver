@@ -9,7 +9,7 @@ elephant = player.get_free_piece(Elephant(player))
 
 # Case 1 : Empty board
 game.make_move(("Place", 1, 2, elephant))
-assert elephant.get_legal_moves(game.get_board()) == [], elephant.get_legal_moves(game.get_board())
+assert elephant.get_legal_moves(game) == [], elephant.get_legal_moves(game)
 assert game.pieces_moved[-1] == [elephant]
 
 game.cancel_move()
@@ -25,14 +25,13 @@ game.make_move(("Place", 0,2, Gazelle(player)))
 game.make_move(("Place", 2,2, Gazelle(player)))
 game.make_move(("Place", 2, 1, Gazelle(player)))
 
-assert (elephant.get_legal_moves(game.get_board()) ==
+assert (elephant.get_legal_moves(game) ==
         [('Push Up', 0, 2, elephant), ('Push Down', 2, 2, elephant),
-         ('Push Left', 1, 1, elephant), ('Push Right', 1, 3, elephant)]), elephant.get_legal_moves(game.get_board())
+         ('Push Left', 1, 1, elephant), ('Push Right', 1, 3, elephant)]), elephant.get_legal_moves(game)
 
 
 # Case 3 : Make the move ('Push Left', 1, 1, elephant)
 game.make_move(("Place", 1, 0, Lion(player)))
-game.remove_piece(1, 3)
 
 game.make_move(('Push Left', 1, 1, elephant))
 assert elephant.get_coords() == (1, 1)
@@ -74,7 +73,7 @@ game.make_move(("Place", 3, 1, elephant))
 game.make_move(("Place", 2, 1, Gazelle(player)))
 game.make_move(("Place", 0, 1, Elephant(player)))
 game.make_move(("Place", 3, 2, Elephant(player)))
-assert elephant.get_legal_moves(game.get_board()) == [("Push Up", 2, 1, elephant)], elephant.get_legal_moves(game.get_board())
+assert elephant.get_legal_moves(game) == [("Push Up", 2, 1, elephant)], elephant.get_legal_moves(game)
 
 # Case 8 :
 game = Strategeti()
@@ -84,7 +83,7 @@ gazelle = player.get_free_piece(Gazelle(player))
 game.make_move(("Place", 3, 2, elephant))
 game.make_move(("Place", 3, 3, gazelle))
 
-assert elephant.get_legal_moves(game.get_board()) == [("Push Right", 3, 3, elephant)], elephant.get_legal_moves(game.get_board())
+assert elephant.get_legal_moves(game) == [("Push Right", 3, 3, elephant)], elephant.get_legal_moves(game)
 game.make_move(("Push Right", 3, 3, elephant))
 assert gazelle.get_coords() == (-1, -1)
 assert elephant.get_coords() == (3, 3)

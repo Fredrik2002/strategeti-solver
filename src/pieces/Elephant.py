@@ -6,7 +6,8 @@ class Elephant(Piece):
     def __init__(self, player):
         super().__init__("E", player)
 
-    def get_legal_moves(self, board : list[list[str]]):
+    def get_legal_moves(self, game):
+        board = game.board
         list_legal_moves = []
 
         # Push up :
@@ -14,13 +15,13 @@ class Elephant(Piece):
         for i in range(self.x - 1, -1, -1):
 
             # Off board, or Elephant on the piece up
-            if isinstance(board[i][self.y], Elephant):
+            if isinstance(board[i * 4 + self.y], Elephant):
                 elephant = True
                 break
             # Empty square
-            elif board[i][self.y] is None:
+            elif board[i * 4 + self.y] is game.empty_square:
                 break
-        if not elephant and self.x - 1 >= 0 and board[self.x - 1][self.y] is not None:
+        if not elephant and self.x - 1 >= 0 and board[(self.x - 1) * 4 + self.y] is not game.empty_square:
             list_legal_moves.append(("Push Up", self.x - 1, self.y, self))
 
         # Push down
@@ -28,14 +29,14 @@ class Elephant(Piece):
         for i in range(self.x + 1, 4):
 
             # Off board, or Elephant on the piece up
-            if isinstance(board[i][self.y], Elephant):
+            if isinstance(board[i * 4 + self.y], Elephant):
                 elephant = True
                 break
             # Empty square
-            elif board[i][self.y] is None:
+            elif board[i * 4 + self.y] is game.empty_square:
                 break
         # Elephant check passed, and piece next to the elephant
-        if not elephant and self.x + 1 <= 3 and board[self.x + 1][self.y] is not None:
+        if not elephant and self.x + 1 <= 3 and board[(self.x + 1) * 4 + self.y] is not game.empty_square:
             list_legal_moves.append(("Push Down", self.x + 1, self.y, self))
 
         # Push left
@@ -43,14 +44,14 @@ class Elephant(Piece):
         for i in range(self.y - 1, -1, -1):
 
             # Off board, or Elephant on the piece up
-            if isinstance(board[self.x][i], Elephant):
+            if isinstance(board[self.x * 4 + i], Elephant):
                 elephant = True
                 break
             # Empty square
-            elif board[self.x][i] is None:
+            elif board[self.x * 4 + i] is game.empty_square:
                 break
         # Elephant check passed, and piece next to the elephant
-        if not elephant and self.y - 1 >= 0 and board[self.x][self.y - 1] is not None:
+        if not elephant and self.y - 1 >= 0 and board[self.x * 4 + self.y - 1] is not game.empty_square:
             list_legal_moves.append(("Push Left", self.x, self.y - 1, self))
 
         # Push right
@@ -58,14 +59,14 @@ class Elephant(Piece):
         for i in range(self.y + 1, 4):
 
             # Off board, or Elephant on the piece up
-            if isinstance(board[self.x][i], Elephant):
+            if isinstance(board[self.x * 4 + i], Elephant):
                 elephant = True
                 break
             # Empty square
-            elif board[self.x][i] is None:
+            elif board[self.x * 4 + i] is game.empty_square:
                 break
         # Elephant check passed, and piece next to the elephant
-        if not elephant and self.y + 1 <= 3 and board[self.x][self.y + 1] is not None:
+        if not elephant and self.y + 1 <= 3 and board[self.x * 4 + self.y + 1] is not game.empty_square:
             list_legal_moves.append(("Push Right", self.x, self.y + 1, self))
 
         return list_legal_moves
@@ -89,19 +90,19 @@ class Elephant(Piece):
             super().make_move(game, move)
 
     def _push_iteration(self, x_range, y_range, game):
-        game.board[self.x][self.y] = None
+        game.board[self.x * 4 + self.y] = game.empty_square
 
         # We start by moving the elephant
         next_piece = self
         for x, y in zip(x_range, y_range):
             current_piece = next_piece
-            if current_piece is None:
+            if current_piece is game.empty_square:
                 break
-            next_piece = game.board[x][y]
+            next_piece = game.board[x * 4 + y]
             current_piece.set_coords_and_game(x, y, game)
 
         # If the last piece is pushed off the board
-        if next_piece is not None:
+        if next_piece is not game.empty_square:
             next_piece.set_coords_and_game(-1, -1, game)
 
 

@@ -1,5 +1,5 @@
 from src.pieces.Lion import Lion
-from src.pieces import Zebra
+from src.pieces.Zebra import Zebra
 from src.utils.Strategeti import Strategeti
 
 game = Strategeti()
@@ -8,7 +8,7 @@ lion = player.get_free_piece(Lion(player))
 
 # Case 1 : Empty board
 game.make_move(("Place", 1, 2, lion))
-assert lion.get_legal_moves(game.get_board()) == [], lion.get_legal_moves(game.get_board())
+assert lion.get_legal_moves(game) == [], lion.get_legal_moves(game)
 assert game.pieces_moved[-1] == [lion]
 
 game.cancel_move()
@@ -26,8 +26,8 @@ zebra = player.get_free_piece(Zebra(player))
 game.make_move(("Place", 3, 1, lion))
 game.make_move(("Place", 3, 0, zebra))
 
-assert (lion.get_legal_moves(game.get_board()) ==
-        [('C', 3, 0, lion)]), lion.get_legal_moves(game.get_board())
+assert (lion.get_legal_moves(game) ==
+        [('C', 3, 0, lion)]), lion.get_legal_moves(game)
 game.make_move(('C', 3, 0, lion))
 assert lion.get_coords() == (3, 0)
 assert zebra.get_coords() == (-1, -1)
@@ -41,5 +41,5 @@ assert zebra.get_coords() == (3, 0)
 assert not zebra.is_captured
 assert not zebra in player.pieces_captured
 assert zebra in player.pieces_placed
-assert game.board[3][0] == zebra
+assert game.board[3 * 4 + 0] == zebra
 

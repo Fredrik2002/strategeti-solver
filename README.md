@@ -63,20 +63,21 @@ projet/
 └── README.md
 ```
 
-## Benchmark :
+## 🏎️ Benchmark :
 
-- ### Tree search global efficiency :
+- ### 🌳 Tree search global efficiency :
 | Date      | Number of position solved | Duration (in s) | Ratio (avg number of position solved per second |
 |-----------|--------------------------:|----------------:|------------------------------------------------:|
 | 29/09     |                   376 482 |          60.201 |                                           6 253 
 
-- ### Function calls efficiency :
+- ### 🔧 Function calls efficiency :
 | Function name | Number of call | Percentage of total running time |
 |---------------|---------------:|---------------------------------:|
 | Strategeti.py:193(get_position_as_integer2)   |        20111030 |  35.5%
 | Gazelle.py:9(get_legal_moves)   |        2198161 |  20.8%
 | Player.py:52(make_move)   |        801515 |  4.4%
 | Elephant.py:9(get_legal_moves)   |        3212168 |  2.6%
+
 ## 📋 To do List :
 - ### Performance improvements : The 2 major weak points are :
   - `get_position_as_integer2` : **40% of total running time**. Used to translate a position into an integer. It is called at each call to the database.

@@ -6,7 +6,8 @@ class Gazelle(Piece):
     def __init__(self, white_color):
         super().__init__("G", white_color)
 
-    def get_legal_moves(self, board : list[list[str]]):
+    def get_legal_moves(self, game):
+        board = game.board
         list_legal_moves = []
         visited = {(self.x, self.y)}
         position_stack = [(self.x, self.y)]
@@ -20,8 +21,8 @@ class Gazelle(Piece):
                 for y_offset in range(-1, 2):
                     new_x, new_y = x + x_offset, y + y_offset
                     if 0 <= new_x <= 3 and 0 <= new_y <= 3:
-                        piece = board[new_x][new_y]
-                        if piece is not None and piece is not self:
+                        piece = board[new_x * 4 + new_y]
+                        if piece is not game.empty_square and piece is not self:
                             # Possible jump
                             possible_jump.append((x_offset, y_offset, 2))
 
@@ -31,8 +32,8 @@ class Gazelle(Piece):
                 new_x, new_y = x + x_offset * coeff, y + y_offset * coeff
 
                 if 0 <= new_x <= 3 and 0 <= new_y <= 3:
-                    piece = board[new_x][new_y]
-                    if piece is not None and piece is not self:
+                    piece = board[new_x * 4 + new_y]
+                    if piece is not game.empty_square and piece is not self:
                         # Bigger jump possible
                         possible_jump.append((x_offset, y_offset, coeff + 1))
                     elif (new_x, new_y) not in visited:
