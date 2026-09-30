@@ -1,4 +1,5 @@
 from src.pieces.Piece import Piece
+from src.utils.Constants import MAPPING_INDICES_BIT
 
 
 class Elephant(Piece):
@@ -92,6 +93,7 @@ class Elephant(Piece):
 
     def _push_iteration(self, x_range, y_range, game):
         game.board[self.x][self.y] = game.empty_square
+        game.footprint &= ~(0b1111 << MAPPING_INDICES_BIT[self.x][self.y])
 
         # We start by moving the elephant
         next_piece = self

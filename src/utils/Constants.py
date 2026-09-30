@@ -1,4 +1,7 @@
 
+# 16 squares * 4 bits + 1 bits for player's turn
+MASK_POSITION_FOOTPRINT = 0x1ffffffffffffffff
+
 # Corner squares are excluded (indices 0, 3, 12, 15)
 SQUARES_INDICES_NO_CORNER = [
     (0, 1), (0, 2),

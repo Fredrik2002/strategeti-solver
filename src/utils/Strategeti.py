@@ -1,6 +1,7 @@
 from src.pieces.EmptySquare import EmptySquare
 from src.utils import Player
 from src.pieces.Piece import Piece
+from src.utils.Constants import MASK_POSITION_FOOTPRINT
 
 
 class Strategeti:
@@ -26,6 +27,7 @@ class Strategeti:
 
         # We store the footprint to not recreating it from scratch at each move
         self.footprint = 0
+        self.footprint_capture = 0
         self.footprint_ok = False
 
     def show_board(self):
@@ -91,6 +93,7 @@ class Strategeti:
         self.player1.update_pieces()
         self.player2.update_pieces()
 
+        self.footprint ^= 1
         self.add_position_to_set()
 
         self.history.append(move)
@@ -107,6 +110,7 @@ class Strategeti:
         for piece_moved in pieces_moved:
             piece_moved.cancel_move(self)
 
+        self.footprint ^= 1
         if not self.footprint_ok:
             # We recompute the footprint
             self.get_footprint()
@@ -219,16 +223,8 @@ class Strategeti:
         :return:
         """
 
-
-        # 1. White's turn = 0, Black's turn = 1
-        result = 0 if self.white_to_move else 1
-
-        # 2. The board
-        offset = 1
-        for row in self.board:
-            for piece in row:
-                result |= piece.piece_id << offset
-                offset += 4
+        result = self.footprint & MASK_POSITION_FOOTPRINT
+        offset = 65
 
         # 3. The captured pieces :
         for piece_code, count in enumerate(self.capture_counts):
@@ -243,12 +239,14 @@ class Strategeti:
         # return self.get_FEN_board()
         if not self.footprint_ok:
             self.footprint = self.get_position_as_integer2()
+        else:
+            pass# assert self.footprint == self.get_position_as_integer2()
 
         return self.footprint
 
     def print_footprint(self):
         res = self.footprint >> 1
-        print(hex(res))
+        return hex(res)
 
     def get_board(self):
         return self.board

@@ -58,9 +58,9 @@ class Player:
             game.make_move(move)
 
             if len(game.history) % 100 == 0:
-                logging.info(f"Timestamp : {datetime.datetime.now()} ")
-                logging.info("Depth : " + str(len(game.history)))
-                logging.info(f"Move {i + 1}/{len(possible_moves)}")
+                logging.info("Timestamp : %s", datetime.datetime.now())
+                logging.info("Depth : %d", len(game.history))
+                logging.info(f"Move %d/%d", i + 1, len(possible_moves))
 
                 if len(game.history) > 5000 :
                     logging.debug(game.history)
