@@ -37,6 +37,7 @@ FOOTPRINT_BIT_SHIFT = {
     "L" : 75
 }
 
+# GAZELLE MOVEMENTS
 # For each square, we store the neighboor squares
 NEIGHBOOR = [[[] for _ in range(4)] for _ in range(4)]
 
@@ -57,3 +58,17 @@ for x in range(4):
                             third_neighboor = None
 
                         NEIGHBOOR[x][y].append((first_neighboor, second_neighboor, third_neighboor))
+
+# ZEBRA MOVEMENTS
+ZEBRA_DIAGS = [[[] for y in range(4)] for x in range(4)]
+
+for x in range(4):
+    for y in range(4):
+        for x_offset in [-1, 1]:
+            for y_offset in [-1, 1]:
+                coeff = 1
+                if 0 <= x + x_offset * coeff <= 3 and 0 <= y + y_offset * coeff <= 3:
+                    ZEBRA_DIAGS[x][y].append([])
+                while 0 <= x + x_offset * coeff <= 3 and 0 <= y + y_offset * coeff <= 3:
+                    ZEBRA_DIAGS[x][y][-1].append((x + x_offset * coeff, y + y_offset * coeff))
+                    coeff += 1

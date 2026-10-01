@@ -27,8 +27,8 @@ class Piece(ABC):
     def set_coords(self, x, y):
         self.past_positions.append((self.x, self.y))
         self.x, self.y = x, y
-        if (x, y) == (-1, -1):
-            self.is_captured = True
+
+        self.is_captured = (x == -1 and y == -1)
 
     def set_coords_and_game(self, x, y, game):
         game.pieces_moved[-1].append(self)

@@ -16,7 +16,7 @@ sys.setrecursionlimit(100_000_000)
 storage = PositionStorage()
 init_size = 0
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.ERROR)
 
 # 1. We load the database if it exists
 if os.path.exists("../tests/database.pkl"):

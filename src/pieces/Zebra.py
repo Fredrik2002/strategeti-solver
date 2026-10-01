@@ -1,4 +1,5 @@
 from src.pieces.Piece import Piece
+from src.utils.Constants import ZEBRA_DIAGS
 
 
 class Zebra(Piece):
@@ -38,21 +39,13 @@ class Zebra(Piece):
                 break
 
         # Diagonal moves
-        list_legal_moves.extend(self.moves_diagonal(game, -1, -1))
-        list_legal_moves.extend(self.moves_diagonal(game, 1, -1))
-        list_legal_moves.extend(self.moves_diagonal(game, -1, 1))
-        list_legal_moves.extend(self.moves_diagonal(game, 1, 1))
+        for diagonal in ZEBRA_DIAGS[self.x][self.y]:
+            for x, y in diagonal:
+                if board[x][y] is game.empty_square:
+                    list_legal_moves.append(("M", x, y, self))
+                else:
+                    # We go to the next diagonal
+                    break
 
-        return list_legal_moves
-
-    def moves_diagonal(self, game, x_offset, y_offset):
-        board = game.board
-        list_legal_moves = []
-        for coeff in range(1, 4):
-            if (0 <= self.x + x_offset * coeff <= 3 and 0 <= self.y + y_offset * coeff <= 3
-                    and board[self.x + x_offset * coeff][self.y + y_offset * coeff] is game.empty_square):
-                list_legal_moves.append(("M", self.x + x_offset * coeff, self.y + y_offset * coeff, self))
-            else:
-                break
         return list_legal_moves
 
