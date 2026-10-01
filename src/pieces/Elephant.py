@@ -16,7 +16,7 @@ class Elephant(Piece):
         for i in range(self.x - 1, -1, -1):
 
             # Off board, or Elephant on the piece up
-            if isinstance(board[i][self.y], Elephant):
+            if board[i][self.y].piece_id in [4, 8]:
                 elephant = True
                 break
             # Empty square
@@ -30,7 +30,7 @@ class Elephant(Piece):
         for i in range(self.x + 1, 4):
 
             # Off board, or Elephant on the piece up
-            if isinstance(board[i][self.y], Elephant):
+            if board[i][self.y].piece_id in [4, 8]:
                 elephant = True
                 break
             # Empty square
@@ -45,7 +45,7 @@ class Elephant(Piece):
         for i in range(self.y - 1, -1, -1):
 
             # Off board, or Elephant on the piece up
-            if isinstance(board[self.x][i], Elephant):
+            if board[self.x][i].piece_id in [4, 8]:
                 elephant = True
                 break
             # Empty square
@@ -60,7 +60,7 @@ class Elephant(Piece):
         for i in range(self.y + 1, 4):
 
             # Off board, or Elephant on the piece up
-            if isinstance(board[self.x][i], Elephant):
+            if board[self.x][i].piece_id in [4, 8]:
                 elephant = True
                 break
             # Empty square

@@ -58,7 +58,7 @@ class Piece(ABC):
         game.footprint |= (self.piece_id << MAPPING_INDICES_BIT[x][y])
 
         game.pieces_moved[-1].append(self)
-        game.footprint_ok = False
+        game.footprint_ok = move_name in ["M", "Place"]
 
         # We clear the previous position
         if move_name in ["M", "C"]:

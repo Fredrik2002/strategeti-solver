@@ -66,19 +66,19 @@ projet/
 ## 🏎️ Benchmark :
 
 - ### 🌳 Tree search global efficiency :
-| Date  | Number of position solved | Duration (in s) | Ratio (avg number of position solved per second | Improvements                        |
-|-------|--------------------------:|----------------:|------------------------------------------------:|-------------------------------------|
-| 29/09 |                   376 482 |          60.201 |                                           6 253 |                                     |
-| 30/09 |                   502 941 |          60.758 |                                           8 277 | Modify the FEN on the fly for 'Move' |
+| Date  | Number of position solved | Duration (in s) | Ratio (avg number of position solved per second | Improvements                                                  |
+|-------|--------------------------:|----------------:|------------------------------------------------:|---------------------------------------------------------------|
+| 29/09 |                   376 482 |          60.201 |                                           6 253 |                                                               |
+| 30/09 |                   502 941 |          60.758 |                                           8 277 | Modify the FEN on the fly for 'Move'                          |
+| 30/09 |                   567 780 |          60.160 |                                           9 437 | Modify the FEN on the fly for 'Place & new gazelle movements' |
 
 - ### 🔧 Function calls efficiency :
-| Function name | Number of call | Percentage of total running time |
-|---------------|---------------:|---------------------------------:|
-| Strategeti.py:193(get_position_as_integer2)   |        1304026 |  14.7%
-| Gazelle.py:9(get_legal_moves)   |        174631 |  11.2%
-| Elephant.py:9(get_legal_moves)   |        716096 |  5.0%
-| Player.py:52(make_move)   |        178996 |  5.0%
-
+| Function name                               | Number of call | Percentage of total running time |
+|---------------------------------------------|---------------:|---------------------------------:|
+| Strategeti.py:193(get_position_as_integer2) |        6569398 |                            14.1% |
+| Gazelle.py:9(get_legal_moves)               |        1532716 |                            13.5% |
+| Player.py:53(make_move)         |         689728 |                             8.7% |
+| Piece.py:73(cancel_move)                    |         4812599 |                             6.8% |
 
 ## 📋 To do List :
 - ### Performance improvements : The 2 major weak points are :

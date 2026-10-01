@@ -8,13 +8,13 @@ class Lion(Piece):
     def get_legal_moves(self, game):
         board = game.board
         list_legal_moves = []
-        if self.x - 1 >= 0 and board[self.x - 1][self.y].__str__() in ['z', 'Z', 'g', 'G']:
+        if self.x - 1 >= 0 and board[self.x - 1][self.y].piece_id in [1, 3, 5, 7]:
             list_legal_moves.append(("C", self.x - 1, self.y, self))
-        if self.x + 1 <= 3 and board[self.x + 1][self.y].__str__() in ['z', 'Z', 'g', 'G']:
+        if self.x + 1 <= 3 and board[self.x + 1][self.y].piece_id in [1, 3, 5, 7]:
             list_legal_moves.append(("C", self.x + 1, self.y, self))
-        if self.y - 1 >= 0 and board[self.x][self.y - 1].__str__() in ['z', 'Z', 'g', 'G']:
+        if self.y - 1 >= 0 and board[self.x][self.y - 1].piece_id in [1, 3, 5, 7]:
             list_legal_moves.append(("C", self.x, self.y - 1, self))
-        if self.y + 1 <= 3 and board[self.x][self.y + 1].__str__() in ['z', 'Z', 'g', 'G']:
+        if self.y + 1 <= 3 and board[self.x][self.y + 1].piece_id in [1, 3, 5, 7]:
             list_legal_moves.append(("C", self.x, self.y + 1, self))
         return list_legal_moves
 
