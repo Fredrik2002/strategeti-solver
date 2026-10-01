@@ -74,7 +74,6 @@ class Elephant(Piece):
 
     def make_move(self, game, move : tuple[str, int , int, Piece]):
         move_name, x, y, _ = move
-        game.footprint_ok = False
 
         if move_name == "Push Up":
             self._push_iteration(range(self.x - 1, -1, -1), [self.y] * self.x, game)
@@ -92,8 +91,7 @@ class Elephant(Piece):
             super().make_move(game, move)
 
     def _push_iteration(self, x_range, y_range, game):
-        game.board[self.x][self.y] = game.empty_square
-        game.footprint &= ~(0b1111 << MAPPING_INDICES_BIT[self.x][self.y])
+        game.clear_piece_on_board(self.x, self.y)
 
         # We start by moving the elephant
         next_piece = self

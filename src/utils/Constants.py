@@ -12,6 +12,8 @@ SQUARES_INDICES_NO_CORNER = [
 
 MAPPING_INDICES_BIT = [[(4 * x + y) * 4 + 1 for y in range(4)] for x in range(4)]
 
+CLEAR_MAPPING_INDICES_BIT = [[~(0b1111 << MAPPING_INDICES_BIT[x][y]) for y in range(4)] for x in range(4)]
+
 MAPPING_PIECE_INTEGER = {
     "E" : 8,
     "G" : 1,
@@ -24,11 +26,19 @@ MAPPING_PIECE_INTEGER = {
     " " : 0
 }
 
+SET_MAPPING_INDICES_BIT = [[[piece << MAPPING_INDICES_BIT[x][y] for piece in range(1, 9)] for y in range(4)] for x in range(4)]
+
+FOOTPRINT_BIT_SHIFT = {
+    "z" : 65,
+    "Z" : 67,
+    "g" : 69,
+    "G" : 71,
+    "l" : 73,
+    "L" : 75
+}
+
 # For each square, we store the neighboor squares
 NEIGHBOOR = [[[] for _ in range(4)] for _ in range(4)]
-
-# x, y, x_offset, y_offset -> first_neighboor, second_neighboor, third_neighboor
-NEIGHBOORS_DESTINATION = [[[[[] for _ in range(3)] for _ in range(3)] for _ in range(4)] for _ in range(4)]
 
 for x in range(4):
     for x_offset in range(-1, 2):
@@ -37,7 +47,6 @@ for x in range(4):
             for y in range(4):
                 for y_offset in range(-1, 2):
                     if 0 <= y + 2 * y_offset <= 3 and (x_offset, y_offset) != (0, 0):
-                        NEIGHBOOR[x][y].append((x_offset, y_offset))
 
                         first_neighboor = x + x_offset, y + y_offset
                         second_neighboor = x + 2 * x_offset, y + 2 * y_offset
@@ -47,4 +56,4 @@ for x in range(4):
                         if not (0 <= x + 3 * x_offset <= 3 and 0 <= y + 3 * y_offset <= 3):
                             third_neighboor = None
 
-                        NEIGHBOORS_DESTINATION[x][y][x_offset][y_offset] = (first_neighboor, second_neighboor, third_neighboor)
+                        NEIGHBOOR[x][y].append((first_neighboor, second_neighboor, third_neighboor))

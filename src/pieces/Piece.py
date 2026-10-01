@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from src.utils.Constants import MAPPING_INDICES_BIT, MAPPING_PIECE_INTEGER
+from src.utils.Constants import MAPPING_INDICES_BIT, MAPPING_PIECE_INTEGER, FOOTPRINT_BIT_SHIFT
 
 
 class Piece(ABC):
@@ -11,6 +11,7 @@ class Piece(ABC):
             self.name = name
 
         self.piece_id = MAPPING_PIECE_INTEGER[self.name]
+        self.capture_bit_shift = (1 << FOOTPRINT_BIT_SHIFT[self.name]) if self.name in FOOTPRINT_BIT_SHIFT else -1
         self.is_captured = False
 
         # Piece is not yet on the board
@@ -33,11 +34,9 @@ class Piece(ABC):
         game.pieces_moved[-1].append(self)
 
         if (x, y) != (-1, -1):
-            game.board[x][y] = self
-            game.footprint &= ~(0b1111 << MAPPING_INDICES_BIT[x][y])
-            game.footprint |= (self.piece_id << MAPPING_INDICES_BIT[x][y])
+            game.set_piece_on_board(self, x, y)
         else:
-            game.capture_counts[self.piece_id] += 1
+            game.footprint += self.capture_bit_shift
 
         self.set_coords(x, y)
 
@@ -50,22 +49,14 @@ class Piece(ABC):
 
     def make_move(self, game, move : tuple[str, int , int, None]):
         move_name, x, y, _ = move
-        game.board[x][y] = self
 
-        # We update the game footprint (so no need to compute it from scratch again)
-        # 1. We add the new position
-        game.footprint &= ~(0b1111 << MAPPING_INDICES_BIT[x][y])
-        game.footprint |= (self.piece_id << MAPPING_INDICES_BIT[x][y])
+        game.set_piece_on_board(self, x, y)
 
         game.pieces_moved[-1].append(self)
-        game.footprint_ok = move_name in ["M", "Place"]
 
         # We clear the previous position
         if move_name in ["M", "C"]:
-            game.board[self.x][self.y] = game.empty_square
-
-            # 2. We clear the previous position
-            game.footprint &= ~(0b1111 << MAPPING_INDICES_BIT[self.x][self.y])
+            game.clear_piece_on_board(self.x, self.y)
 
         self.past_positions.append((self.x, self.y))
         self.x, self.y = x, y
@@ -81,8 +72,7 @@ class Piece(ABC):
             self.player.pieces_to_be_placed.add(self)
 
             # We cancel the placement of the piece
-            game.board[self.x][self.y] = game.empty_square
-            game.footprint &= ~(0b1111 << MAPPING_INDICES_BIT[self.x][self.y])
+            game.clear_piece_on_board(self.x, self.y)
 
         # Current position is off the board : Means the piece has been captured
         elif (self.x, self.y) == (-1, -1):
@@ -93,20 +83,16 @@ class Piece(ABC):
             self.is_captured = False
 
             # We put back the piece at its original position (before the capture)
-            game.board[x][y] = self
-            game.footprint &= ~(0b1111 << MAPPING_INDICES_BIT[x][y])
-            game.footprint |= (self.piece_id << MAPPING_INDICES_BIT[x][y])
-            game.capture_counts[self.piece_id] -= 1
+            game.set_piece_on_board(self, x, y)
+            game.footprint -= self.capture_bit_shift
         else:
             # The piece was moved
 
             # The clear the last position, and set the new one
             if game.board[self.x][self.y] == self:
-                game.board[self.x][self.y] = game.empty_square
-                game.footprint &= ~(0b1111 << MAPPING_INDICES_BIT[self.x][self.y])
-            game.board[x][y] = self
-            game.footprint &= ~(0b1111 << MAPPING_INDICES_BIT[x][y])
-            game.footprint |= (self.piece_id << MAPPING_INDICES_BIT[x][y])
+                game.clear_piece_on_board(self.x, self.y)
+
+            game.set_piece_on_board(self, x, y)
 
         self.x, self.y = x, y
 

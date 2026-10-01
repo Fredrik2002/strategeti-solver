@@ -57,13 +57,10 @@ class Player:
         for i, move in enumerate(possible_moves):
             game.make_move(move)
 
-            if len(game.history) % 100 == 0:
+            if len(game.history) < 100:
                 logging.info("Timestamp : %s", datetime.datetime.now())
                 logging.info("Depth : %d", len(game.history))
                 logging.info(f"Move %d/%d", i + 1, len(possible_moves))
-
-                if len(game.history) > 5000 :
-                    logging.debug(game.history)
 
             fen = game.get_footprint()
 
@@ -94,11 +91,11 @@ class Player:
         best_eval = None
         for move, (finished, evaluation) in move_to_position_dict.items():
 
-            if self.is_better(evaluation, best_eval):
+            if self.is_better(finished, evaluation, best_eval):
                 best_move = move
-                best_eval = evaluation
+                best_eval = evaluation, finished
 
-        self.position_storage.save_state(game.get_footprint(), False, self.next_eval(best_eval))
+        self.position_storage.save_state(game.get_footprint(), False, self.next_eval(*best_eval))
 
 
     def update_pieces(self):
@@ -107,11 +104,7 @@ class Player:
             self.pieces_placed.discard(piece)
             self.pieces_captured.add(piece)
 
-    def assert_copy_safety(self, game, tmp_game):
-        for i in range(len(game.player1.pieces_placed)):
-            assert id(game.player1.pieces_placed[i]) != id(tmp_game.player1.pieces_placed[i])
-
-    def is_better(self, evaluation, best_eval):
+    def is_better(self, finished, evaluation, best_eval):
         """
         For white, ordering from worst to best is : [Black, -1, -2, -3, ..., 0, ..., +3, +2, +1, White]
 
@@ -121,35 +114,29 @@ class Player:
         """
         if best_eval is None : return True
         if self.white_color:
-            if isinstance(evaluation, int) and isinstance(best_eval, int):
-                return evaluation > best_eval
-            elif isinstance(evaluation, str):
-                return evaluation == "White"
-            else:
-                return best_eval == "Black"
+            if finished != 0:
+                return finished == 1
+            return evaluation > best_eval[0]
         else:
-            if isinstance(evaluation, int) and isinstance(best_eval, int):
-                return evaluation < best_eval
-            elif isinstance(evaluation, str):
-                return evaluation == "Black"
-            else:
-                return best_eval == "White"
+            if finished != 0:
+                return finished == -1
+            return evaluation < best_eval[0]
 
-    def next_eval(self, evaluation):
+    def next_eval(self, finished, evaluation):
+        # Game is finished, M1 for either white or black
+        if finished != 0:
+            return finished
+
         if self.white_color:
-            if evaluation == "Black" or (isinstance(evaluation, int) and evaluation <= 0):
-                return evaluation
-            elif evaluation == "White":
-                return 1
-            else:
+            if evaluation > 0:
                 return evaluation + 1
+            else:
+                return evaluation
         else:
-            if evaluation == "White" or (isinstance(evaluation, int) and evaluation >= 0):
-                return evaluation
-            elif evaluation == "Black":
-                return -1
+            if evaluation < 0:
+                return evaluation - 1
             else:
-                return evaluation + 1
+                return evaluation
 
     def get_color(self):
         return self.white_color

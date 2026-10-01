@@ -1,7 +1,8 @@
 from src.pieces.EmptySquare import EmptySquare
 from src.utils import Player
 from src.pieces.Piece import Piece
-from src.utils.Constants import MASK_POSITION_FOOTPRINT
+from src.utils.Constants import MASK_POSITION_FOOTPRINT, MAPPING_INDICES_BIT, CLEAR_MAPPING_INDICES_BIT, \
+    SET_MAPPING_INDICES_BIT
 
 
 class Strategeti:
@@ -27,19 +28,6 @@ class Strategeti:
 
         # We store the footprint to not recreating it from scratch at each move
         self.footprint = 0
-        self.footprint_capture = 0
-        self.footprint_ok = False
-
-    def show_board(self):
-        print(self.get_FEN_board())
-        print("-----------------")
-        for i, case in enumerate(self.board):
-            if i % 4 == 0:
-                print("|", end=' ')
-            print(case, end=" | ")
-            print()
-            print("-----------------")
-        print()
 
     def play(self):
         if self.check_winner():
@@ -57,24 +45,24 @@ class Strategeti:
 
         :return: True if the game is finished (White won, Black won, or draw), False otherwise
         """
-        finished = False
+        finished = 0
         evaluation = None
         if len(self.player1.pieces_captured) == 5:
-            evaluation = "Black"
-            finished = True
+            evaluation = 0
+            finished = -1
         elif len(self.player2.pieces_captured) == 5:
-            evaluation = "White"
-            finished = True
+            evaluation = 0
+            finished = 1
         elif self.draw:
             evaluation = 0
         elif self.white_to_move:
             if len(self.player1.get_legal_moves(self)) == 0:
-                evaluation = "Black"
-                finished = True
+                evaluation = 0
+                finished = -1
         else:
             if len(self.player2.get_legal_moves(self)) == 0:
-                evaluation = "White"
-                finished = True
+                evaluation = 0
+                finished = 1
 
         if finished:
             self.database.save_state(self.get_footprint(), finished, evaluation)
@@ -99,8 +87,7 @@ class Strategeti:
         self.history.append(move)
 
     def cancel_move(self):
-        move = self.history.pop()
-        self.footprint_ok = move[0] == "M"
+        self.history.pop()
 
         self.remove_position_from_set()
 
@@ -111,10 +98,6 @@ class Strategeti:
             piece_moved.cancel_move(self)
 
         self.footprint ^= 1
-        if not self.footprint_ok:
-            # We recompute the footprint
-            self.get_footprint()
-            self.footprint_ok = True
 
     def add_position_to_set(self):
         """
@@ -132,134 +115,26 @@ class Strategeti:
         self.draw = False
         self.position_set.discard(self.get_footprint())
 
+    def set_piece_on_board(self, piece, x, y):
+        self.board[x][y] = piece
 
-    def get_FEN_board(self):
-        """
-        - 1 character : 0 -> white to move, 1 -> black to move
-        - The list of to be placed pieces for both players
-        - |
-        - The list of captured pieces for both players
-        - |
-        - The board (row major, empty squares represented by underscore)
-        - The number of time the position was reached
+        self.footprint &= CLEAR_MAPPING_INDICES_BIT[x][y]
+        self.footprint |= SET_MAPPING_INDICES_BIT[x][y][piece.piece_id - 1]
 
+    def clear_piece_on_board(self, x, y):
+        self.board[x][y] = self.empty_square
 
-        :return:
-        """
-        turn = "0" if self.white_to_move else "1"
-        to_be_placed_p1 = list(map(lambda piece : piece.__str__(), self.player1.pieces_to_be_placed))
-        to_be_placed_p2 = list(map(lambda piece : piece.__str__(), self.player2.pieces_to_be_placed))
-        placed = "".join(sorted(to_be_placed_p1 + to_be_placed_p2))
-
-        captured_p1 = list(map(lambda piece: piece.__str__(), self.player1.pieces_captured))
-        captured_p2 = list(map(lambda piece: piece.__str__(), self.player2.pieces_captured))
-        captured = "".join(sorted(captured_p1 + captured_p2))
-
-        board = []
-        for row in self.board:
-            for piece in row:
-                if piece is None:
-                    board.append("_")
-                else:
-                    board.append(piece.__str__())
-
-        partial = turn + placed + "|" + captured + "|" + "".join(board)
-        if partial not in self.position_set:
-            return partial + "0"
-        else:
-            return partial + str(self.position_set[partial])
-
-    def FEN_safety(self):
-        fen = self.get_FEN_board()
-        for c in ['G', 'g', 'l', 'L', 'e', 'E', 'Z', 'z']:
-            assert fen.count(c) == 2
-
-        for x in range(4):
-            for y in range(4):
-                if self.board[x][y] is not self.empty_square:
-                    assert self.board[x][y].get_coords() == (x, y)
-
-    def get_position_as_integer1(self):
-        """
-        The goal of this function is to find a modelisation which can store a position
-        with the fewest number of bytes. The modelisation is the following :
-
-        bit 0 = 0 : White to move
-        bit 1-2 : Number of times the position was reached
-
-            We then store an information on 6 bits for each piece
-            bit 0-1 (MSB, first bit of a word) :
-                - 00 : piece is placed on the board
-                - 01 : piece is yet to be placed
-                - 10 : piece is captured
-            bit 2-3 : x coordinate
-            bit 4-5 : y coordinate
-
-        Pieces order : E, G, L, Z, e, g, l, z
-
-        This takes at most 16x6=96 bits
-
-
-        :return:
-        """
-        pass
-
-    def get_position_as_integer2(self):
-        """
-        The goal of this function is to find a modelisation which can store a position
-        with the fewest number of bytes. The modelisation is the following :
-
-        bit 0 = 0 : White to move
-
-            We then store an information on 4 bits for each square (see MAPPING_PIECE_INTEGER)
-
-        This requires exactly 4x16 bits = 64 bits
-
-        We then store on 3 bits each captured piece
-
-        This requires at most 10x3 bits = 30 bits
-
-
-        :return:
-        """
-
-        result = self.footprint & MASK_POSITION_FOOTPRINT
-        offset = 65
-
-        # 3. The captured pieces :
-        for piece_code, count in enumerate(self.capture_counts):
-            for _ in range(count):
-                result |= piece_code << offset
-                offset += 4
-
-        return result
+        self.footprint &= CLEAR_MAPPING_INDICES_BIT[x][y]
 
 
     def get_footprint(self):
-        # return self.get_FEN_board()
-        if not self.footprint_ok:
-            self.footprint = self.get_position_as_integer2()
-        else:
-            pass# assert self.footprint == self.get_position_as_integer2()
-
         return self.footprint
 
     def print_footprint(self):
         res = self.footprint >> 1
         return hex(res)
 
-    def get_board(self):
-        return self.board
-
     def set_database(self, database):
         self.database = database
         self.player1.position_storage = database
         self.player2.position_storage = database
-
-    def get_database(self):
-        return self.database
-
-if __name__ == '__main__':
-    main = Strategeti()
-    main.put_piece(1, 2, "e")
-    main.show_board()

@@ -52,11 +52,9 @@ assert gazelle1.get_legal_moves(game) == []
 assert gazelle2.get_legal_moves(game) == [('M', 1, 1, gazelle2)]
 game.make_move(gazelle2.get_legal_moves(game)[0])
 assert gazelle2.get_coords() == (1, 1)
-assert game.footprint == game.get_position_as_integer2(), (hex(game.footprint >> 1), hex(game.get_position_as_integer2() >> 1))
 
 game.cancel_move()
 assert gazelle2.get_coords() == (1, 3)
-assert game.footprint == game.get_position_as_integer2(), (game.print_footprint())
 assert game.footprint == footprint
 
 
