@@ -16,7 +16,7 @@ sys.setrecursionlimit(100_000_000)
 storage = PositionStorage()
 init_size = 0
 
-logging.basicConfig(level=logging.ERROR)
+logging.basicConfig(level=logging.INFO)
 
 # 1. We load the database if it exists
 if os.path.exists("../tests/database.pkl"):
@@ -28,8 +28,7 @@ else:
     logging.error("Cannot find database at ../tests/database.pkl. Restarting the solving from scratch.")
 
 # 2. We create the game instance
-game = Strategeti()
-game.set_database(storage)
+game = Strategeti(3, storage)
 
 # 3. We start the play
 start = time.time()
@@ -39,7 +38,7 @@ except (Exception, KeyboardInterrupt) as e:
     end = time.time()
 
     # 4. We save the database state before quitting
-    logging.debug(traceback.format_exc())
+    logging.error(traceback.format_exc())
     logging.error(f"Saving database : Database size : {len(storage.get_database())}, "
           f"New positions found : {len(storage.get_database()) - init_size} in {round(end - start, 3)}s")
     storage.save_database()

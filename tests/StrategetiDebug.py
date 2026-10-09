@@ -3,7 +3,7 @@ import copy
 
 from src.pieces.Elephant import Elephant
 from src.pieces.Gazelle import Gazelle
-from src.utils.Constants import MAPPING_INDICES_BIT, MASK_POSITION_FOOTPRINT
+from src.utils.Constants4x4 import MAPPING_INDICES_BIT, MASK_POSITION_FOOTPRINT
 from src.utils.Strategeti import Strategeti
 
 game = Strategeti()

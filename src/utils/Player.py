@@ -1,6 +1,5 @@
 import logging
 
-from src.utils.Constants import SQUARES_INDICES_NO_CORNER
 from src.utils import PositionStorage
 from src.pieces.Elephant import Elephant
 from src.pieces.Gazelle import Gazelle
@@ -10,18 +9,17 @@ import datetime
 
 
 class Player:
-    def __init__(self, white_color, database : PositionStorage.PositionStorage):
+    def __init__(self, game, white_color):
         self.white_color = white_color
-        self.position_storage : PositionStorage.PositionStorage = database
         self.pieces_to_be_placed = {
-            Elephant(self),
-            Elephant(self),
-            Lion(self),
-            Lion(self),
-            Zebra(self),
-            Zebra(self),
-            Gazelle(self),
-            Gazelle(self),
+            Elephant(self, game),
+            Elephant(self, game),
+            Lion(self, game),
+            Lion(self, game),
+            Zebra(self, game),
+            Zebra(self, game),
+            Gazelle(self, game),
+            Gazelle(self, game),
         }
         self.pieces_placed = set()
 
@@ -30,7 +28,7 @@ class Player:
     def get_legal_moves(self, game):
         list_possible_moves = []
         for piece in self.piece_set():
-            for x, y in SQUARES_INDICES_NO_CORNER:
+            for x, y in game.constants.SQUARES_INDICES_NO_CORNER:
                 # Rules don't allow piece placement in the corners
                 if game.board[x][y] is game.empty_square:
                     list_possible_moves.append(("Place", x, y, piece))
@@ -51,33 +49,59 @@ class Player:
         return result
 
     def make_move(self, game):
-        move_to_position_dict = {}
+        second_loop_needed = True
+        # Pruning strategy
+        # First loop : We look for an efficient move :
+        #       - A move which wins the game on the spot
+        #       - A move which gives a position that we know winning
+        # If such a move is found, no need to dive any deeper in the tree search
         possible_moves = self.get_legal_moves(game)
 
         for i, move in enumerate(possible_moves):
             game.make_move(move)
-
-            if len(game.history) < 100:
-                logging.info("Timestamp : %s", datetime.datetime.now())
-                logging.info("Depth : %d", len(game.history))
-                logging.info(f"Move %d/%d", i + 1, len(possible_moves))
-
-            fen = game.get_footprint()
-
-            # Unless it's a draw, We keep the game going if we don't know the evaluation of this position
-            if game.draw:
-                move_to_position_dict[move] = True, 0
-            else:
-                if fen not in self.position_storage.get_database():
-                    game.play()
-
-                move_to_position_dict[move] = self.position_storage.get_database()[fen]
-
-            # We go back to the original position
+            game.check_winner()
+            new_eval = game.position_storage.get_database().get(game.get_footprint())
             game.cancel_move()
+            if new_eval is not None and self.is_winning(*new_eval):
+                self.evaluate_and_save(game, {move: new_eval})
+                logging.info("Trivial pruning found at move %d/%d !", i+1, len(possible_moves))
+                second_loop_needed = False
+                break
 
+        if second_loop_needed:
+            # Second loop : None of the move gives a trivial win
+            # We continue the tree search
+            move_to_position_dict = {}
+            for i, move in enumerate(possible_moves):
+                game.make_move(move)
 
-        self.evaluate_and_save(game, move_to_position_dict)
+                logging.debug("Timestamp : %s", datetime.datetime.now())
+                logging.info("Depth : %d", len(game.history))
+                logging.debug(f"Move %d/%d", i + 1, len(possible_moves))
+
+                # Unless it's a draw, We keep the game going if we don't know the evaluation of this position
+                if game.draw:
+                    new_eval = True, 0
+                    move_to_position_dict[move] = new_eval
+                else:
+                    fen = game.get_footprint()
+                    if fen not in game.position_storage.get_database():
+                        game.play()
+
+                    new_eval = game.position_storage.get_database().get(fen)
+                    move_to_position_dict[move] = new_eval
+
+                # We go back to the original position
+                game.cancel_move()
+
+                if self.is_winning(*new_eval):
+                    # Pruning : if at least one of the moves gives a winning position,
+                    # We do not look for the other moves
+                    logging.info("Pruning found at move %d/%d !", i, len(possible_moves))
+                    break
+
+            self.evaluate_and_save(game, move_to_position_dict)
+
 
     def evaluate_and_save(self, game, move_to_position_dict):
         '''
@@ -93,9 +117,9 @@ class Player:
 
             if self.is_better(finished, evaluation, best_eval):
                 best_move = move
-                best_eval = evaluation, finished
+                best_eval = finished, evaluation
 
-        self.position_storage.save_state(game.get_footprint(), False, self.next_eval(*best_eval))
+        game.position_storage.save_state(game.get_footprint(), False, self.next_eval(*best_eval))
 
 
     def update_pieces(self):
@@ -145,5 +169,17 @@ class Player:
         for p in self.pieces_to_be_placed | self.pieces_placed | self.pieces_captured:
             if p.__class__ == piece.__class__:
                 return p
+
+    def get_captured_pieces(self):
+        return self.pieces_captured
+
+    def get_to_be_placed_pieces(self):
+        return self.pieces_to_be_placed
+
+    def is_winning(self, finished, evaluation):
+        if self.white_color:
+            return finished > 0 or evaluation > 0
+        else:
+            return finished < 0 or evaluation < 0
 
 

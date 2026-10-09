@@ -1,11 +1,10 @@
 from src.pieces.Piece import Piece
-from src.utils.Constants import NEIGHBOOR
 
 
 class Gazelle(Piece):
 
-    def __init__(self, white_color):
-        super().__init__("G", white_color)
+    def __init__(self, white_color, game):
+        super().__init__("G", white_color, game)
 
     def get_legal_moves(self, game):
         board = game.board
@@ -17,7 +16,7 @@ class Gazelle(Piece):
             x, y = position_stack.pop()
 
             # The list of offsets in which a jump could be possible
-            for n1, n2, n3 in NEIGHBOOR[x][y]:
+            for n1, n2, n3 in game.constants.NEIGHBOOR[x][y]:
 
                 # The 3 neighboors, when going in direction (x_offset, y_offset) from (x, y)
                 # n1 and n2 are garanteed to be not None (otherwise, no jump possible)

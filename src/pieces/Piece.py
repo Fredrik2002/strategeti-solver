@@ -1,17 +1,17 @@
 from abc import ABC, abstractmethod
 
-from src.utils.Constants import MAPPING_INDICES_BIT, MAPPING_PIECE_INTEGER, FOOTPRINT_BIT_SHIFT
+from src.utils.Constants import MAPPING_PIECE_INTEGER
 
 
 class Piece(ABC):
-    def __init__(self, name : str, player):
+    def __init__(self, name : str, player, game):
         if not player.get_color():
             self.name = name.lower()
         else:
             self.name = name
 
         self.piece_id = MAPPING_PIECE_INTEGER[self.name]
-        self.capture_bit_shift = (1 << FOOTPRINT_BIT_SHIFT[self.name]) if self.name in FOOTPRINT_BIT_SHIFT else -1
+        self.capture_bit_shift = (1 << game.constants.FOOTPRINT_BIT_SHIFT[self.name]) if self.name in game.constants.FOOTPRINT_BIT_SHIFT else -1
         self.is_captured = False
 
         # Piece is not yet on the board
@@ -68,7 +68,7 @@ class Piece(ABC):
         # Past position was off the board : The piece has been placed
         if (x, y) == (-1,-1):
             # The piece was just placed on the board
-            self.player.pieces_placed.pop()
+            self.player.pieces_placed.discard(self)
             self.player.pieces_to_be_placed.add(self)
 
             # We cancel the placement of the piece

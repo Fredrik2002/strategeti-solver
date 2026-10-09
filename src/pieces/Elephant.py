@@ -1,11 +1,10 @@
 from src.pieces.Piece import Piece
-from src.utils.Constants import MAPPING_INDICES_BIT
 
 
 class Elephant(Piece):
 
-    def __init__(self, player):
-        super().__init__("E", player)
+    def __init__(self, player, game):
+        super().__init__("E", player, game)
 
     def get_legal_moves(self, game):
         board = game.board
@@ -27,7 +26,7 @@ class Elephant(Piece):
 
         # Push down
         elephant = False
-        for i in range(self.x + 1, 4):
+        for i in range(self.x + 1, game.N):
 
             # Off board, or Elephant on the piece up
             if board[i][self.y].piece_id in [4, 8]:
@@ -37,7 +36,7 @@ class Elephant(Piece):
             elif board[i][self.y] is game.empty_square:
                 break
         # Elephant check passed, and piece next to the elephant
-        if not elephant and self.x + 1 <= 3 and board[self.x + 1][self.y] is not game.empty_square:
+        if not elephant and self.x + 1 < game.N and board[self.x + 1][self.y] is not game.empty_square:
             list_legal_moves.append(("Push Down", self.x + 1, self.y, self))
 
         # Push left
@@ -57,7 +56,7 @@ class Elephant(Piece):
 
         # Push right
         elephant = False
-        for i in range(self.y + 1, 4):
+        for i in range(self.y + 1, game.N):
 
             # Off board, or Elephant on the piece up
             if board[self.x][i].piece_id in [4, 8]:
@@ -67,7 +66,7 @@ class Elephant(Piece):
             elif board[self.x][i] is game.empty_square:
                 break
         # Elephant check passed, and piece next to the elephant
-        if not elephant and self.y + 1 <= 3 and board[self.x][self.y + 1] is not game.empty_square:
+        if not elephant and self.y + 1 < game.N and board[self.x][self.y + 1] is not game.empty_square:
             list_legal_moves.append(("Push Right", self.x, self.y + 1, self))
 
         return list_legal_moves
@@ -79,13 +78,13 @@ class Elephant(Piece):
             self._push_iteration(range(self.x - 1, -1, -1), [self.y] * self.x, game)
 
         elif move_name == "Push Down":
-            self._push_iteration(range(self.x + 1, 4), [self.y] * (3 - self.x), game)
+            self._push_iteration(range(self.x + 1, game.N), [self.y] * (game.N - 1 - self.x), game)
 
         elif move_name == "Push Left":
             self._push_iteration([self.x] * self.y, range(self.y - 1, -1, -1), game)
 
         elif move_name == "Push Right":
-            self._push_iteration([self.x] * (3 - self.y), range(self.y + 1, 4), game)
+            self._push_iteration([self.x] * (game.N - 1 - self.y), range(self.y + 1, game.N), game)
 
         else:
             super().make_move(game, move)
