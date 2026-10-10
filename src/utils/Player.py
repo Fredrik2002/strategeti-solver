@@ -119,7 +119,7 @@ class Player:
                 best_move = move
                 best_eval = finished, evaluation
 
-        game.position_storage.save_state(game.get_footprint(), False, self.next_eval(*best_eval))
+        game.position_storage.save_state(game, False, self.next_eval(*best_eval))
 
 
     def update_pieces(self):

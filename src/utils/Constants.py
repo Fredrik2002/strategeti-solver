@@ -26,6 +26,10 @@ class Constants:
         # For a given square and piece, it returns the piece id shifted to the correct number of bits
         self.SET_MAPPING_INDICES_BIT = [[[piece << self.MAPPING_INDICES_BIT[x][y] for piece in range(1, 9)] for y in range(N)] for x in range(N)]
 
+        # Returns the mask to get the captured pieces information
+        # 1 bit for player's turn, 4*N*N bits for board
+        self.CAPTURED_PIECES_BITS = ~(2**(1 + 4*N*N) - 1)
+
         self.FOOTPRINT_BIT_SHIFT = {
             "z" : 4*N*N + 1,
             "Z" : 4*N*N + 3,

@@ -88,7 +88,7 @@ class Strategeti:
                 finished = 1
 
         if finished:
-            self.position_storage.save_state(self.get_footprint(), finished, evaluation)
+            self.position_storage.save_state(self, finished, evaluation)
         return finished or self.draw
 
     def make_move(self, move):
@@ -154,10 +154,34 @@ class Strategeti:
 
         self.footprint &= self.constants.CLEAR_MAPPING_INDICES_BIT[x][y]
 
-
     def get_footprint(self):
         return self.footprint
 
-    def print_footprint(self):
-        res = self.footprint >> 1
-        return hex(res)
+    def print_footprint(self, footprint=None):
+        if footprint is None:
+            footprint = self.footprint
+
+        res = footprint >> 1
+        board = str(hex(res)[-9:]) + str(footprint % 2)
+        return board
+
+    def recompute_footprint(self, new_board):
+        """
+        Function called to compute the footprint of a symmetrical position as the current board
+        The symmetric board is passed as a parameter, the captured pieces are the same
+
+        :param new_board: A symmetric version of the current board
+        :return: The footprint of the new_board
+        """
+        result = 0
+
+        for x in range(self.N):
+            for y in range(self.N):
+                piece = new_board[x][y]
+                if piece is not self.empty_square:
+                    result |= self.constants.SET_MAPPING_INDICES_BIT[x][y][piece.piece_id - 1]
+
+        # We simply copy the captured pieces information
+        result |= self.footprint & self.constants.CAPTURED_PIECES_BITS
+        return result
+
