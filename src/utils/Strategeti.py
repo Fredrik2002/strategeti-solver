@@ -1,4 +1,5 @@
 from src.pieces.EmptySquare import EmptySquare
+from src.tree_search.CompleteSearch import CompleteSearch
 from src.utils import Player
 from src.pieces.Piece import Piece
 from src.utils.Constants import Constants
@@ -20,9 +21,6 @@ class Strategeti:
         self.history = []
         self.pieces_moved = []
 
-        # Keeps track of all the pieces captured
-        self.capture_counts = [0] * 8
-
         # Creates an empty square object to be placed in every
         self.empty_square = EmptySquare(self.player1, self)
 
@@ -32,14 +30,16 @@ class Strategeti:
         # We store the footprint to not recreating it from scratch at each move
         self.footprint = 0
 
+        self.search_strategy = CompleteSearch()
+
     def play(self):
         if self.check_winner():
             return True
 
         if self.white_to_move:
-            self.player1.make_move(self)
+            self.search_strategy.start_search(self, self.player1)
         else:
-            self.player2.make_move(self)
+            self.search_strategy.start_search(self, self.player2)
 
     def show_board(self):
         print(f"{'White' if self.white_to_move else 'Black'} to move")
