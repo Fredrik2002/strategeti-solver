@@ -7,7 +7,6 @@ class PositionStorage:
         self.positions = {}
 
     def save_state(self, game, finished, evaluation):
-        assert game.get_footprint_with_repetition(game.get_footprint()) not in self.positions
         self.positions[game.get_footprint_with_repetition(game.get_footprint())] = (finished, evaluation)
 
         # We also save the symmetrical positions

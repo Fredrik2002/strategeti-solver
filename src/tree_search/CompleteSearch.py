@@ -9,15 +9,10 @@ class CompleteSearch:
     def start_search(self, game, player):
         move_to_position_dict = set()
         possible_moves = player.get_legal_moves(game)
-        footprint = game.footprint
 
         for i, move in enumerate(possible_moves):
             game.make_move(move)
             fen = game.get_footprint_with_repetition(game.footprint)
-
-            # logging.debug("Timestamp : %s", datetime.datetime.now())
-            # logging.info("Depth : %d", len(game.history))
-            # logging.debug(f"Move %d/%d", i + 1, len(possible_moves))
 
             # Unless it's a draw, We keep the game going if we don't know the evaluation of this position
             if fen not in game.position_storage.get_database():
