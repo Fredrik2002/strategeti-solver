@@ -1,21 +1,29 @@
+import logging
+import os
+
 from src.pieces.EmptySquare import EmptySquare
 from src.tree_search.CompleteSearch import CompleteSearch
 from src.utils import Player
 from src.pieces.Piece import Piece
 from src.utils.Constants import Constants
+from src.utils.PositionStorage import PositionStorage
 
 
 class Strategeti:
-    def __init__(self, N, position_storage = None):
+    def __init__(self, N):
         self.N = N
 
         # We compute all the constants we will need
         self.constants = Constants(N)
 
-        self.position_set = set()
-        self.position_storage = position_storage
+        self.position_set = {0 : 1}
         self.player1 = Player.Player(self, True)
         self.player2 = Player.Player(self, False)
+        self.nb_pieces = len(self.player1.pieces_to_be_placed)
+
+        self.position_storage = PositionStorage()
+        self.load_storage()
+
         self.draw = False
         self.white_to_move = True
         self.history = []
@@ -43,6 +51,8 @@ class Strategeti:
 
     def show_board(self):
         print(f"{'White' if self.white_to_move else 'Black'} to move")
+        print(f"Evaluation : {self.position_storage.get_database()[self.get_footprint_with_repetition(self.footprint)]}")
+        print(f"Footprint : {self.footprint} = {bin(self.footprint)}")
         print(f"To be placed pieces : White : {self.player1.get_to_be_placed_pieces()}, Black : {self.player2.get_to_be_placed_pieces()}")
         print(f"Captured pieces : White : {self.player1.get_captured_pieces()}, Black : {self.player2.get_captured_pieces()}")
         print("-----------------")
@@ -69,22 +79,23 @@ class Strategeti:
         :return: True if the game is finished (White won, Black won, or draw), False otherwise
         """
         finished = 0
-        evaluation = None
+        evaluation = 0
         if len(self.player1.pieces_captured) == 5:
-            evaluation = 0
-            finished = -1
+            evaluation = -1
+            finished = 1
         elif len(self.player2.pieces_captured) == 5:
-            evaluation = 0
+            evaluation = 1
             finished = 1
         elif self.draw:
+            finished = 1
             evaluation = 0
         elif self.white_to_move:
             if len(self.player1.get_legal_moves(self)) == 0:
-                evaluation = 0
-                finished = -1
+                evaluation = -1
+                finished = 1
         else:
             if len(self.player2.get_legal_moves(self)) == 0:
-                evaluation = 0
+                evaluation = 1
                 finished = 1
 
         if finished:
@@ -129,19 +140,20 @@ class Strategeti:
         :return:
         """
         position = self.get_footprint()
-        if position in self.position_set:
-            self.draw = True
+        position_count = self.position_set.get(position)
+        if position_count is None:
+            self.position_set[position] = 1
         else:
-            self.position_set.add(self.get_footprint())
+            self.position_set[position] += 1
+            if position_count == self.constants.NUMBER_OF_REPETITIONS_ALLOWED:
+                self.draw = True
 
     def remove_position_from_set(self):
-        if not self.draw:
-            # We reached the position for the first time -> back to 0
-            self.position_set.discard(self.get_footprint())
+        if self.position_set[self.footprint] == 1:
+            self.position_set.pop(self.footprint)
         else:
-            # The game is draw, so reached the position for the second time -> back to 1,
-            # we keep the position in the position_set
-            self.draw = False
+            self.position_set[self.footprint] -= 1
+        self.draw = False
 
     def set_piece_on_board(self, piece, x, y):
         self.board[x][y] = piece
@@ -156,6 +168,10 @@ class Strategeti:
 
     def get_footprint(self):
         return self.footprint
+
+    def get_footprint_with_repetition(self, footprint):
+        nb_repetitions = self.position_set[footprint]
+        return footprint | self.constants.POSITION_OCCURRENCE_BIT_SHIFT[nb_repetitions]
 
     def print_footprint(self, footprint=None):
         if footprint is None:
@@ -181,7 +197,22 @@ class Strategeti:
                 if piece is not self.empty_square:
                     result |= self.constants.SET_MAPPING_INDICES_BIT[x][y][piece.piece_id - 1]
 
-        # We simply copy the captured pieces information
+        # We simply copy the captured pieces information, and the player's turn
         result |= self.footprint & self.constants.CAPTURED_PIECES_BITS
         return result
+
+    def load_storage(self):
+        filename = f"../tests/database_{self.N}x{self.N}_{self.nb_pieces}_pieces.pkl"
+        if os.path.exists(filename):
+            logging.error("Loading database...")
+            self.position_storage.load_database(filename)
+            init_size = len(self.position_storage.positions)
+            logging.error(f"Database of {init_size} elements successfully loaded")
+        else:
+            logging.error(f"Cannot find database at {filename}. Restarting the solving from scratch.")
+
+    def save_storage(self):
+        filename = f"../tests/database_{self.N}x{self.N}_{self.nb_pieces}_pieces.pkl"
+        self.position_storage.save_database(filename)
+
 

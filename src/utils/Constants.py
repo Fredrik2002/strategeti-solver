@@ -28,7 +28,7 @@ class Constants:
 
         # Returns the mask to get the captured pieces information
         # 1 bit for player's turn, 4*N*N bits for board
-        self.CAPTURED_PIECES_BITS = ~(2**(1 + 4*N*N) - 1)
+        self.CAPTURED_PIECES_BITS = (~(2**(1 + 4*N*N) - 1))
 
         self.FOOTPRINT_BIT_SHIFT = {
             "z" : 4*N*N + 1,
@@ -38,6 +38,10 @@ class Constants:
             "l" : 4*N*N + 9,
             "L" : 4*N*N + 11,
         }
+
+        self.NUMBER_OF_REPETITIONS_ALLOWED = 1
+
+        self.POSITION_OCCURRENCE_BIT_SHIFT = [i << 4*N*N + 13 for i in range(N)]
 
         # GAZELLE MOVEMENTS
         # For each square, we store the neighboor squares

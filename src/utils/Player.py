@@ -13,13 +13,13 @@ class Player:
         self.white_color = white_color
         self.pieces_to_be_placed = {
             Elephant(self, game),
-            Elephant(self, game),
+            # Elephant(self, game),
             Lion(self, game),
-            Lion(self, game),
+            # Lion(self, game),
             Zebra(self, game),
-            Zebra(self, game),
+            # Zebra(self, game),
             Gazelle(self, game),
-            Gazelle(self, game),
+            # Gazelle(self, game),
         }
         self.pieces_placed = set()
 
@@ -103,64 +103,12 @@ class Player:
             self.evaluate_and_save(game, move_to_position_dict)
 
 
-    def evaluate_and_save(self, game, move_to_position_dict):
-        '''
-        Computes the best possible move along all the possibilities.
-        The best move is used to compute the current position evaluation
-        Once the best move is computed, the position evaluation is saved in the database
-
-        :param game: The game with the original position
-        :param move_to_position_dict: The correspondance move -> FEN position
-        '''
-        best_eval = None
-        for move, (finished, evaluation) in move_to_position_dict.items():
-
-            if self.is_better(finished, evaluation, best_eval):
-                best_move = move
-                best_eval = finished, evaluation
-
-        game.position_storage.save_state(game, False, self.next_eval(*best_eval))
-
-
     def update_pieces(self):
         newly_captured = [piece for piece in self.pieces_placed if piece.is_captured]
         for piece in newly_captured:
             self.pieces_placed.discard(piece)
             self.pieces_captured.add(piece)
 
-    def is_better(self, finished, evaluation, best_eval):
-        """
-        For white, ordering from worst to best is : [Black, -1, -2, -3, ..., 0, ..., +3, +2, +1, White]
-
-        For black, ordering from worst to be is : [White, +1, +2, +3, ..., 0, ..., -3, -2, -1, Black]
-
-        :return: true is evaluation is better than best_eval for the current_player
-        """
-        if best_eval is None : return True
-        if self.white_color:
-            if finished != 0:
-                return finished == 1
-            return evaluation > best_eval[0]
-        else:
-            if finished != 0:
-                return finished == -1
-            return evaluation < best_eval[0]
-
-    def next_eval(self, finished, evaluation):
-        # Game is finished, M1 for either white or black
-        if finished != 0:
-            return finished
-
-        if self.white_color:
-            if evaluation > 0:
-                return evaluation + 1
-            else:
-                return evaluation
-        else:
-            if evaluation < 0:
-                return evaluation - 1
-            else:
-                return evaluation
 
     def get_color(self):
         return self.white_color
