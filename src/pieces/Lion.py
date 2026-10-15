@@ -23,6 +23,6 @@ class Lion(Piece):
         if move_name == "C":
             # A piece gets captured, we remove it from the board
             piece_captured : Piece = game.board[x][y]
-            piece_captured.set_coords_and_game(-1, -1, game)
+            piece_captured.set_captured(game)
 
         super().make_move(game, move)

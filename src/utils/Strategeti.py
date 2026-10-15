@@ -1,21 +1,29 @@
+import logging
+import os
+
 from src.pieces.EmptySquare import EmptySquare
 from src.tree_search.CompleteSearch import CompleteSearch
+from src.tree_search.RetroAnalysis import RetroAnalysis
 from src.utils import Player
 from src.pieces.Piece import Piece
 from src.utils.Constants import Constants
+from src.utils.PositionStorage import PositionStorage
 
 
 class Strategeti:
-    def __init__(self, N, position_storage = None):
+    def __init__(self, N):
         self.N = N
 
         # We compute all the constants we will need
         self.constants = Constants(N)
 
         self.position_set = set()
-        self.position_storage = position_storage
         self.player1 = Player.Player(self, True)
         self.player2 = Player.Player(self, False)
+        self.nb_pieces = len(self.player1.pieces_to_be_placed)
+
+        self.position_storage = PositionStorage()
+
         self.draw = False
         self.white_to_move = True
         self.history = []
@@ -30,7 +38,10 @@ class Strategeti:
         # We store the footprint to not recreating it from scratch at each move
         self.footprint = 0
 
-        self.search_strategy = CompleteSearch()
+        self.search_strategy = RetroAnalysis()
+
+        self.filename = f"../tests/database_{self.N}x{self.N}_{self.nb_pieces}_pieces.pkl"
+        self.load_storage()
 
     def play(self):
         if self.check_winner():
@@ -43,6 +54,8 @@ class Strategeti:
 
     def show_board(self):
         print(f"{'White' if self.white_to_move else 'Black'} to move")
+        print(f"Evaluation : {self.position_storage.get_database()[self.footprint]}")
+        print(f"Footprint : {self.footprint} = {bin(self.footprint)}")
         print(f"To be placed pieces : White : {self.player1.get_to_be_placed_pieces()}, Black : {self.player2.get_to_be_placed_pieces()}")
         print(f"Captured pieces : White : {self.player1.get_captured_pieces()}, Black : {self.player2.get_captured_pieces()}")
         print("-----------------")
@@ -69,22 +82,23 @@ class Strategeti:
         :return: True if the game is finished (White won, Black won, or draw), False otherwise
         """
         finished = 0
-        evaluation = None
+        evaluation = 0
         if len(self.player1.pieces_captured) == 5:
-            evaluation = 0
-            finished = -1
+            evaluation = -1
+            finished = 1
         elif len(self.player2.pieces_captured) == 5:
-            evaluation = 0
+            evaluation = 1
             finished = 1
         elif self.draw:
+            finished = 1
             evaluation = 0
         elif self.white_to_move:
             if len(self.player1.get_legal_moves(self)) == 0:
-                evaluation = 0
-                finished = -1
+                evaluation = -1
+                finished = 1
         else:
             if len(self.player2.get_legal_moves(self)) == 0:
-                evaluation = 0
+                evaluation = 1
                 finished = 1
 
         if finished:
@@ -97,12 +111,14 @@ class Strategeti:
         if move[0] == "Place":
             piece.player.pieces_placed.add(move[-1])
             piece.player.pieces_to_be_placed.discard(move[-1])
+
+            if not any(x.piece_id == piece.piece_id for x in piece.player.pieces_to_be_placed):
+                piece.player.set_pieces_to_be_placed = set(filter(lambda x : x.piece_id != piece.piece_id,
+                                                                  piece.player.set_pieces_to_be_placed))
+
         piece.make_move(self, move)
 
         self.white_to_move = not self.white_to_move
-
-        self.player1.update_pieces()
-        self.player2.update_pieces()
 
         self.footprint ^= 1
         self.add_position_to_set()
@@ -181,7 +197,20 @@ class Strategeti:
                 if piece is not self.empty_square:
                     result |= self.constants.SET_MAPPING_INDICES_BIT[x][y][piece.piece_id - 1]
 
-        # We simply copy the captured pieces information
+        # We simply copy the captured pieces information, and the player's turn
         result |= self.footprint & self.constants.CAPTURED_PIECES_BITS
         return result
+
+    def load_storage(self):
+        if os.path.exists(self.filename):
+            logging.error("Loading database...")
+            self.search_strategy.load_database(self.filename)
+            init_size = len(self.position_storage.positions)
+            logging.error(f"Database of {init_size} elements successfully loaded")
+        else:
+            logging.error(f"Cannot find database at {self.filename}. Restarting the solving from scratch.")
+
+    def save_storage(self):
+        self.search_strategy.save_database(self.filename)
+
 

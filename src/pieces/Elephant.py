@@ -13,13 +13,13 @@ class Elephant(Piece):
         # Push up :
         elephant = False
         for i in range(self.x - 1, -1, -1):
-
+            piece = board[self.x][i]
             # Off board, or Elephant on the piece up
-            if board[i][self.y].piece_id in [4, 8]:
+            if piece.piece_id == 4 or piece.piece_id == 8:
                 elephant = True
                 break
             # Empty square
-            elif board[i][self.y] is game.empty_square:
+            elif piece is game.empty_square:
                 break
         if not elephant and self.x - 1 >= 0 and board[self.x - 1][self.y] is not game.empty_square:
             list_legal_moves.append(("Push Up", self.x - 1, self.y, self))
@@ -27,13 +27,13 @@ class Elephant(Piece):
         # Push down
         elephant = False
         for i in range(self.x + 1, game.N):
-
+            piece = board[self.x][i]
             # Off board, or Elephant on the piece up
-            if board[i][self.y].piece_id in [4, 8]:
+            if piece.piece_id == 4 or piece.piece_id == 8:
                 elephant = True
                 break
             # Empty square
-            elif board[i][self.y] is game.empty_square:
+            elif piece is game.empty_square:
                 break
         # Elephant check passed, and piece next to the elephant
         if not elephant and self.x + 1 < game.N and board[self.x + 1][self.y] is not game.empty_square:
@@ -42,13 +42,13 @@ class Elephant(Piece):
         # Push left
         elephant = False
         for i in range(self.y - 1, -1, -1):
-
+            piece = board[self.x][i]
             # Off board, or Elephant on the piece up
-            if board[self.x][i].piece_id in [4, 8]:
+            if piece.piece_id == 4 or piece.piece_id == 8:
                 elephant = True
                 break
             # Empty square
-            elif board[self.x][i] is game.empty_square:
+            elif piece is game.empty_square:
                 break
         # Elephant check passed, and piece next to the elephant
         if not elephant and self.y - 1 >= 0 and board[self.x][self.y - 1] is not game.empty_square:
@@ -57,13 +57,13 @@ class Elephant(Piece):
         # Push right
         elephant = False
         for i in range(self.y + 1, game.N):
-
+            piece = board[self.x][i]
             # Off board, or Elephant on the piece up
-            if board[self.x][i].piece_id in [4, 8]:
+            if piece.piece_id == 4 or piece.piece_id == 8:
                 elephant = True
                 break
             # Empty square
-            elif board[self.x][i] is game.empty_square:
+            elif piece is game.empty_square:
                 break
         # Elephant check passed, and piece next to the elephant
         if not elephant and self.y + 1 < game.N and board[self.x][self.y + 1] is not game.empty_square:
@@ -103,6 +103,6 @@ class Elephant(Piece):
 
         # If the last piece is pushed off the board
         if next_piece is not game.empty_square:
-            next_piece.set_coords_and_game(-1, -1, game)
+            next_piece.set_captured(game)
 
 

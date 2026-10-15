@@ -1,18 +1,28 @@
-import copy
 
 
-from src.pieces.Elephant import Elephant
-from src.pieces.Gazelle import Gazelle
-from src.utils.Constants4x4 import MAPPING_INDICES_BIT, MASK_POSITION_FOOTPRINT
+from src.tree_search.CompleteSearch import CompleteSearch
 from src.utils.Strategeti import Strategeti
+import pickle
 
-game = Strategeti()
+with open("database_3x3_4_pieces.pkl", "rb") as f:
+    db1 = pickle.load(f)
 
-0b111111
-fen = 0xfabc6008_0424_0800_0100
-real_fen = fen << 1
-real_fen |= 1
+with open("database_3x3_4_pieces2.pkl", "rb") as f:
+    db2 = pickle.load(f)
 
-real_fen &= MASK_POSITION_FOOTPRINT
-real_fen |= 0b111 << 65
-print(hex(real_fen >> 1))
+print(len(db1))
+print(len(db2))
+
+db2_minus_db1 = {}
+db1_minus_db2 = {}
+
+for key, value in db1.items():
+    if key not in db2 or db2[key] != value:
+        db2_minus_db1[key] = value
+
+for key, value in db2.items():
+    if key not in db1 or db1[key] != value:
+        db1_minus_db2[key] = value
+
+print(len(db2_minus_db1))
+print(len(db1_minus_db2))

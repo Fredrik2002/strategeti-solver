@@ -28,7 +28,7 @@ class Constants:
 
         # Returns the mask to get the captured pieces information
         # 1 bit for player's turn, 4*N*N bits for board
-        self.CAPTURED_PIECES_BITS = ~(2**(1 + 4*N*N) - 1)
+        self.CAPTURED_PIECES_BITS = (~(2**(1 + 4*N*N) - 1)) | 1
 
         self.FOOTPRINT_BIT_SHIFT = {
             "z" : 4*N*N + 1,

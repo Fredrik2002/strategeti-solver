@@ -23,22 +23,26 @@ class Piece(ABC):
 
         self.past_positions = []
 
-
-    def set_coords(self, x, y):
-        self.past_positions.append((self.x, self.y))
-        self.x, self.y = x, y
-
-        self.is_captured = (x == -1 and y == -1)
-
     def set_coords_and_game(self, x, y, game):
         game.pieces_moved[-1].append(self)
 
-        if (x, y) != (-1, -1):
-            game.set_piece_on_board(self, x, y)
-        else:
-            game.footprint += self.capture_bit_shift
+        game.set_piece_on_board(self, x, y)
 
-        self.set_coords(x, y)
+        self.past_positions.append((self.x, self.y))
+        self.x, self.y = x, y
+
+    def set_captured(self, game):
+        game.pieces_moved[-1].append(self)
+
+        self.past_positions.append((self.x, self.y))
+
+        game.footprint += self.capture_bit_shift
+
+        self.is_captured = True
+        self.x, self.y = -1, -1
+
+        self.player.pieces_placed.discard(self)
+        self.player.pieces_captured.add(self)
 
     def get_coords(self):
         return self.x, self.y
@@ -70,6 +74,9 @@ class Piece(ABC):
             # The piece was just placed on the board
             self.player.pieces_placed.discard(self)
             self.player.pieces_to_be_placed.add(self)
+
+            if not any(p.piece_id == self.piece_id for p in self.player.set_pieces_to_be_placed):
+                self.player.set_pieces_to_be_placed.add(self)
 
             # We cancel the placement of the piece
             game.clear_piece_on_board(self.x, self.y)
