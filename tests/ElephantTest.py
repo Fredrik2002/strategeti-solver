@@ -3,9 +3,9 @@ from src.pieces.Gazelle import Gazelle
 from src.pieces.Lion import Lion
 from src.utils.Strategeti import Strategeti
 
-game = Strategeti()
+game = Strategeti(4)
 player = game.player1
-elephant = player.get_free_piece(Elephant(player))
+elephant = player.get_free_piece(Elephant(player, game))
 
 # Case 1 : Empty board
 game.make_move(("Place", 1, 2, elephant))
@@ -19,11 +19,11 @@ assert not elephant in elephant.player.pieces_placed
 
 # Case 2 : pieces near, push in all 4 directions
 game.make_move(("Place", 1, 2, elephant))
-game.make_move(("Place", 1,1, Gazelle(player)))
-game.make_move(("Place", 1,3, Gazelle(player)))
-game.make_move(("Place", 0,2, Gazelle(player)))
-game.make_move(("Place", 2,2, Gazelle(player)))
-game.make_move(("Place", 2, 1, Gazelle(player)))
+game.make_move(("Place", 1,1, Gazelle(player, game)))
+game.make_move(("Place", 1,3, Gazelle(player, game)))
+game.make_move(("Place", 0,2, Gazelle(player, game)))
+game.make_move(("Place", 2,2, Gazelle(player, game)))
+game.make_move(("Place", 2, 1, Gazelle(player, game)))
 
 assert (elephant.get_legal_moves(game) ==
         [('Push Up', 0, 2, elephant), ('Push Down', 2, 2, elephant),
@@ -31,16 +31,16 @@ assert (elephant.get_legal_moves(game) ==
 
 
 # Case 3 : Make the move ('Push Left', 1, 1, elephant)
-game.make_move(("Place", 1, 0, Lion(player)))
+game.make_move(("Place", 1, 0, Lion(player, game)))
 
 game.make_move(('Push Left', 1, 1, elephant))
 assert elephant.get_coords() == (1, 1)
 
 # Case 4 : Push row with gap in the middle
-game = Strategeti()
-elephant = Elephant(player)
-gazelle1 = Gazelle(player)
-gazelle2 = Gazelle(player)
+game = Strategeti(4)
+elephant = Elephant(player, game)
+gazelle1 = Gazelle(player, game)
+gazelle2 = Gazelle(player, game)
 
 game.make_move(("Place", 1, 3, elephant))
 game.make_move(("Place", 1, 2, gazelle1))
@@ -67,19 +67,19 @@ assert gazelle2.get_coords() == (1, 0), gazelle2.get_coords()
 assert not gazelle2.is_captured
 
 # Case 7 : Elephant on the same row
-game = Strategeti()
-elephant = Elephant(player)
+game = Strategeti(4)
+elephant = Elephant(player, game)
 game.make_move(("Place", 3, 1, elephant))
-game.make_move(("Place", 2, 1, Gazelle(player)))
-game.make_move(("Place", 0, 1, Elephant(player)))
-game.make_move(("Place", 3, 2, Elephant(player)))
+game.make_move(("Place", 2, 1, Gazelle(player, game)))
+game.make_move(("Place", 0, 1, Elephant(player, game)))
+game.make_move(("Place", 3, 2, Elephant(player, game)))
 assert elephant.get_legal_moves(game) == [("Push Up", 2, 1, elephant)], elephant.get_legal_moves(game)
 
 # Case 8 :
-game = Strategeti()
+game = Strategeti(4)
 player = game.player1
-elephant = player.get_free_piece(Elephant(player))
-gazelle = player.get_free_piece(Gazelle(player))
+elephant = player.get_free_piece(Elephant(player, game))
+gazelle = player.get_free_piece(Gazelle(player, game))
 game.make_move(("Place", 3, 2, elephant))
 game.make_move(("Place", 3, 3, gazelle))
 

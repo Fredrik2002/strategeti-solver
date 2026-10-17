@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from src.utils.Constants import MAPPING_PIECE_INTEGER
+from src.utils.Constants import MAPPING_PIECE_INTEGER, MAPPING_PIECE_INSIDE_INTEGER
 
 
 class Piece(ABC):
@@ -11,6 +11,8 @@ class Piece(ABC):
             self.name = name
 
         self.piece_id = MAPPING_PIECE_INTEGER[self.name]
+        self.piece_inside_id = MAPPING_PIECE_INSIDE_INTEGER[self.name]
+
         self.capture_bit_shift = (1 << game.constants.FOOTPRINT_BIT_SHIFT[self.name]) if self.name in game.constants.FOOTPRINT_BIT_SHIFT else -1
         self.is_captured = False
 

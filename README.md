@@ -107,9 +107,9 @@ projet/
 | Piece.py:73(cancel_move)                    |        4812599 |                             6.8% |
 
 ### Number of positions :
-| Board size | Number of pieces (E, G, L, Z) per player |                                               Number of positions |
-|------------|-----------------------------------------:|------------------------------------------------------------------:|
-| 3x3        |                           4 (1, 1, 1, 1) | 3 719 282 vs 3 629 229 (4/4 symmetry) vs 3 678 787 (2/4 symmetry) |
+| Board size | Number of pieces (E, G, L, Z) per player | Number of positions |
+|------------|-----------------------------------------:|--------------------:|
+| 3x3        |                           4 (1, 1, 1, 1) |           3 719 282 |
 
 
 ## 📋 To-Do List & Future Improvements

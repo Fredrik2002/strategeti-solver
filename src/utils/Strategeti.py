@@ -22,8 +22,6 @@ class Strategeti:
         self.player2 = Player.Player(self, False)
         self.nb_pieces = len(self.player1.pieces_to_be_placed)
 
-        self.position_storage = PositionStorage()
-
         self.draw = False
         self.white_to_move = True
         self.history = []
@@ -40,8 +38,8 @@ class Strategeti:
 
         self.search_strategy = RetroAnalysis()
 
-        self.filename = f"../tests/database_{self.N}x{self.N}_{self.nb_pieces}_pieces.pkl"
-        self.load_storage()
+        self.filename = f"../tests/database_{self.N}x{self.N}_{self.nb_pieces}_pieces2.pkl"
+        self.search_strategy.load_database(self.filename)
 
     def play(self):
         if self.check_winner():
@@ -201,16 +199,24 @@ class Strategeti:
         result |= self.footprint & self.constants.CAPTURED_PIECES_BITS
         return result
 
-    def load_storage(self):
-        if os.path.exists(self.filename):
-            logging.error("Loading database...")
-            self.search_strategy.load_database(self.filename)
-            init_size = len(self.position_storage.positions)
-            logging.error(f"Database of {init_size} elements successfully loaded")
-        else:
-            logging.error(f"Cannot find database at {self.filename}. Restarting the solving from scratch.")
+    def safety(self):
+        assert self.footprint == self.recompute_footprint(self.board)
 
-    def save_storage(self):
-        self.search_strategy.save_database(self.filename)
+        for x in range(self.N):
+            for y in range(self.N):
+                p = self.board[x][y]
+                if p != self.empty_square:
+                    assert (x, y) == p.get_coords()
+                    assert not p.is_captured
+                    assert p in p.player.pieces_placed
+                    assert p not in p.player.pieces_to_be_placed
+                    assert p not in p.player.pieces_captured
 
+        for player in [self.player1, self.player2]:
+            for p in player.pieces_captured:
+                assert p.is_captured
+                assert p.get_coords() == (-1, -1)
 
+                assert p not in p.player.pieces_placed
+                assert p not in p.player.pieces_to_be_placed
+                assert p in p.player.pieces_captured

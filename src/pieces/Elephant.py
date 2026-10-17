@@ -13,7 +13,7 @@ class Elephant(Piece):
         # Push up :
         elephant = False
         for i in range(self.x - 1, -1, -1):
-            piece = board[self.x][i]
+            piece = board[i][self.y]
             # Off board, or Elephant on the piece up
             if piece.piece_id == 4 or piece.piece_id == 8:
                 elephant = True
@@ -27,7 +27,7 @@ class Elephant(Piece):
         # Push down
         elephant = False
         for i in range(self.x + 1, game.N):
-            piece = board[self.x][i]
+            piece = board[i][self.y]
             # Off board, or Elephant on the piece up
             if piece.piece_id == 4 or piece.piece_id == 8:
                 elephant = True

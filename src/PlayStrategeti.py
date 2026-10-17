@@ -18,7 +18,7 @@ while True:
             evaluation = (1, 0)
 
         game.cancel_move()
-        sorted_moves.append((move, evaluation, fen))
+        sorted_moves.append((move, evaluation))
 
     #     if evaluation[0] == 0 and evaluation[1] < 0:
     #         sorted_moves[0].append((move, evaluation, footprint))
@@ -36,8 +36,8 @@ while True:
     #     sorted_moves = sorted_moves[2] + sorted(sorted_moves[0], key=lambda a: a[1][1], reverse=True) \
     #                    + sorted(sorted_moves[1], key=lambda a: a[1][1], reverse=True) + sorted_moves[3]
 
-    for i, (move, evaluation, fen) in enumerate(sorted_moves):
-        print(f"[{i}] : {move}, evaluation = {evaluation}, fen = {fen}")
+    for i, (move, evaluation) in enumerate(sorted_moves):
+        print(f"[{i}] : {move}, {evaluation}")
     print()
 
     player_choice = ""
