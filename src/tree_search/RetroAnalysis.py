@@ -12,11 +12,11 @@ class RetroAnalysis:
         # STEP 1 : Find all the terminated positions
 
         # Stores for each position, the list of its parents + its evaluation
-        self.parent_to_subpositions : dict[int, tuple[list[int], tuple[int, int]]] = {0 : ([], None)}
+        self.parent_to_subpositions : dict[int, tuple[list[int], list[int], tuple[int, int]]] = {0 : ([], [], None)}
 
-        self.progress_bar_step1 = tqdm(desc="Step 1 Progression", unit="positions", total=3_719_282)
+        self.progress_bar_step1 = tqdm(desc="Step 1 Progression", unit="positions", total=3_719_282, position=0)
 
-        self.progress_bar_step2 = tqdm(desc="Step 2 Progression", unit="positions")
+        self.progress_bar_step2 = tqdm(desc="Step 2 Progression", unit="positions", total=3_719_282, position=0)
 
         self.step1_done = False
 
@@ -35,17 +35,17 @@ class RetroAnalysis:
 
             self.progress_bar_step1.close()
             print(f"Step 2 starting")
-            #self.step2()
+            self.step2()
         except (Exception, KeyboardInterrupt) as e:
 
             # 4. We save the database state before quitting
             logging.error(traceback.format_exc())
 
-            end = time.time()
-            logging.error(f"Saving database : Database size : {len(game.search_strategy.parent_to_subpositions)}, "
-                          f"New positions found : {len(game.search_strategy.parent_to_subpositions) - init_size} in {round(end - start, 3)}s")
-            #game.search_strategy.save_database(game.filename)
-            logging.error("Database saved successfully")
+        end = time.time()
+        logging.error(f"Saving database : Database size : {len(game.search_strategy.parent_to_subpositions)}, "
+                      f"New positions found : {len(game.search_strategy.parent_to_subpositions) - init_size} in {round(end - start, 3)}s")
+        game.search_strategy.save_database(game.filename)
+        logging.error("Database saved successfully")
 
     def get_player(self, game):
         return game.player1 if game.white_to_move else game.player2
@@ -63,34 +63,35 @@ class RetroAnalysis:
         possible_moves = player.get_legal_moves(game)
 
         initial_fen = game.get_footprint()
+        parent = self.parent_to_subpositions[initial_fen]
 
         for i, move in enumerate(possible_moves):
             game.make_move(move)
 
             fen = game.get_footprint()
+            parent[0].append(fen)
 
             if fen not in self.parent_to_subpositions:
                 self.progress_bar_step1.update(1)
 
                 evaluation = self.game_won(game)
                 if evaluation != 0:
-                    self.parent_to_subpositions[fen] = ([initial_fen], (evaluation, 0))
+                    self.parent_to_subpositions[fen] = ([], [initial_fen], (evaluation, 0))
                 else:
                     # Position cannot be evaluated so far, we only store the parents
-                    self.parent_to_subpositions[fen] = ([initial_fen], None)
+                    self.parent_to_subpositions[fen] = ([], [initial_fen], None)
 
-                # New position to explore
-                self.step1(game, self.get_player(game))
+                    # New position to explore
+                    self.step1(game, self.get_player(game))
             else:
-                self.parent_to_subpositions[fen][0].append(initial_fen)
+                self.parent_to_subpositions[fen][1].append(initial_fen)
 
             game.cancel_move()
 
     # STEP 2
     def step2(self):
-        queue : list[int, int, int] = [(key, *pos[1]) for key, pos in self.parent_to_subpositions.items()
-                                       if pos[1] is not None]
-        on_going_positions = {}
+        queue : list[int, int, int] = [(key, *pos[-1]) for key, pos in self.parent_to_subpositions.items()
+                                       if pos[-1] is not None]
         global_dtz = -1
 
         n_solved = len(queue)
@@ -103,64 +104,51 @@ class RetroAnalysis:
                 print(f"Next distance to 0 : {abs(dtz)}")
                 global_dtz = abs(dtz)
 
-            parents = self.parent_to_subpositions[position][0]
+            parents = self.parent_to_subpositions[position][1]
 
             for parent in parents:
-                if self.parent_to_subpositions[parent][1] is not None:
+                if self.parent_to_subpositions[parent][-1] is not None:
                     # Position already solved
                     continue
 
                 if evaluation > 0 and parent % 2 == 0:
                     # parent is winning for white
-                    p = self.parent_to_subpositions[parent][0]
-                    self.parent_to_subpositions[parent] = (p, (evaluation, dtz + 1))
+                    sons, p, _ = self.parent_to_subpositions[parent]
+                    self.parent_to_subpositions[parent] = (sons, p, (evaluation, dtz + 1))
 
                     queue.append((parent, evaluation, dtz + 1))
-                    on_going_positions.pop(parent, None)
 
                     n_solved += 1
-                    self.progress_bar_step2.update(n_solved)
+                    self.progress_bar_step2.update(1)
                 elif evaluation < 0 and parent % 2 == 1:
                     # parent is winning for black
-                    p = self.parent_to_subpositions[parent][0]
-                    self.parent_to_subpositions[parent] = (p, (evaluation, dtz - 1))
+                    sons, p, _ = self.parent_to_subpositions[parent]
+                    self.parent_to_subpositions[parent] = (sons, p, (evaluation, dtz - 1))
 
                     queue.append((parent, evaluation, dtz - 1))
-                    on_going_positions.pop(parent, None)
 
                     n_solved += 1
-                    self.progress_bar_step2.update(n_solved)
+                    self.progress_bar_step2.update(1)
                 else:
-                    if parent not in on_going_positions:
-                        on_going_positions[parent] = self.get_number_of_subpositions(parent)
-                    else:
-                        on_going_positions[parent] -= 1
-
-                    if on_going_positions[parent] == 0:
+                    if len([p for p in self.parent_to_subpositions[parent][0] if self.parent_to_subpositions[p][2] is None]) == 0:
                         # All the subpositions are computed
-                        evaluations = list(map(lambda son : self.parent_to_subpositions[son][1],
-                                               self.compute_subpositions(parent)))
+                        evaluations = list(map(lambda son : self.parent_to_subpositions[son][-1],
+                                               self.parent_to_subpositions[parent][0]))
 
                         if parent % 2 == 0:
                             new_eval = self.compute_best_eval_for_white(evaluations)
                         else:
                             new_eval = self.compute_best_eval_for_black(evaluations)
 
-                        p = self.parent_to_subpositions[parent][0]
-                        self.parent_to_subpositions[parent] = (p, new_eval)
+                        sons, p, _ = self.parent_to_subpositions[parent]
+                        self.parent_to_subpositions[parent] = (sons, p, new_eval)
                         queue.append((parent, *new_eval))
 
                         n_solved += 1
-                        self.progress_bar_step2.update(n_solved)
+                        self.progress_bar_step2.update(1)
 
             # Optimisation : we can clear the parents
-            self.parent_to_subpositions[position] = (None, (evaluation, dtz))
-
-    def get_number_of_subpositions(self, fen) -> int:
-        pass
-
-    def compute_subpositions(self, fen) -> list[int]:
-        pass
+            self.parent_to_subpositions[position] = (None, None, (evaluation, dtz))
 
 
     def compute_best_eval_for_white(self, evaluations):
@@ -168,7 +156,7 @@ class RetroAnalysis:
         for evaluation, dtz in evaluations:
             if best_eval == 1 and evaluation == 1 and dtz < best_dtz:
                 best_eval, best_dtz = evaluation, dtz
-            elif best_eval == -1 and evaluation == -1 and dtz > best_dtz:
+            elif best_eval == -1 and evaluation == -1 and dtz < best_dtz:
                 best_eval, best_dtz = evaluation, dtz
             elif evaluation == 1 and best_eval == -1:
                 best_eval, best_dtz = evaluation, dtz
@@ -176,14 +164,14 @@ class RetroAnalysis:
         if best_eval > 0:
             return best_eval, best_dtz + 1
         else:
-            return best_eval, best_dtz
+            return best_eval, best_dtz - 1
 
     def compute_best_eval_for_black(self, evaluations):
         best_eval, best_dtz = evaluations[0]
         for evaluation, dtz in evaluations:
             if best_eval == -1 and evaluation == -1 and dtz > best_dtz:
                 best_eval, best_dtz = evaluation, dtz
-            elif best_eval == 1 and evaluation == 1 and dtz < best_dtz:
+            elif best_eval == 1 and evaluation == 1 and dtz > best_dtz:
                 best_eval, best_dtz = evaluation, dtz
             elif evaluation == -1 and best_eval == +1:
                 best_eval, best_dtz = evaluation, dtz
@@ -191,7 +179,7 @@ class RetroAnalysis:
         if best_eval < 0:
             return best_eval, best_dtz - 1
         else:
-            return best_eval, best_dtz
+            return best_eval, best_dtz + 1
 
 
     def save_database(self, filename):
@@ -203,7 +191,7 @@ class RetroAnalysis:
             with open(filename, "rb") as f:
                 logging.error("Loading database...")
                 self.parent_to_subpositions, self.step1_done = pickle.load(f)
-                self.progress_bar_step1.update(len(self.parent_to_subpositions))
+                # self.progress_bar_step1.update(len(self.parent_to_subpositions))
                 init_size = len(self.parent_to_subpositions)
                 logging.error(f"Database of {init_size} elements successfully loaded")
         else:

@@ -12,10 +12,7 @@ while True:
     for i, move in enumerate(available_moves):
         game.make_move(move)
         fen = game.get_footprint()
-        evaluation = game.position_storage.get_database().get(fen)
-
-        if game.draw:
-            evaluation = (1, 0)
+        evaluation = game.search_strategy.parent_to_subpositions.get(fen)[-1]
 
         game.cancel_move()
         sorted_moves.append((move, evaluation))

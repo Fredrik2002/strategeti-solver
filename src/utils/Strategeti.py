@@ -52,7 +52,7 @@ class Strategeti:
 
     def show_board(self):
         print(f"{'White' if self.white_to_move else 'Black'} to move")
-        print(f"Evaluation : {self.position_storage.get_database()[self.footprint]}")
+        print(f"Evaluation : {self.search_strategy.parent_to_subpositions[self.footprint][-1]}")
         print(f"Footprint : {self.footprint} = {bin(self.footprint)}")
         print(f"To be placed pieces : White : {self.player1.get_to_be_placed_pieces()}, Black : {self.player2.get_to_be_placed_pieces()}")
         print(f"Captured pieces : White : {self.player1.get_captured_pieces()}, Black : {self.player2.get_captured_pieces()}")
@@ -99,8 +99,6 @@ class Strategeti:
                 evaluation = 1
                 finished = 1
 
-        if finished:
-            self.position_storage.save_state(self, finished, evaluation)
         return finished or self.draw
 
     def make_move(self, move):
