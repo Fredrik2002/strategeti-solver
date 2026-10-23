@@ -38,7 +38,7 @@ class Strategeti:
 
         self.search_strategy = RetroAnalysis()
 
-        self.filename = f"../tests/database_{self.N}x{self.N}_{self.nb_pieces}_pieces2.pkl"
+        self.filename = f"../tests/database_{self.N}x{self.N}_{self.nb_pieces}_pieces.pkl"
         self.search_strategy.load_database(self.filename)
 
     def play(self):

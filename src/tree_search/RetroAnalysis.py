@@ -12,9 +12,9 @@ class RetroAnalysis:
         # STEP 1 : Find all the terminated positions
 
         # Stores for each position, the list of its parents + its evaluation
-        self.parent_to_subpositions : dict[int, tuple[list[int], list[int], tuple[int, int]]] = {0 : ([], [], None)}
+        self.parent_to_subpositions : dict[int, tuple[list[int], list[int], tuple[int, int]]] = {0 : ([], [], [], None)}
 
-        self.progress_bar_step1 = tqdm(desc="Step 1 Progression", unit="positions", total=3_719_282, position=0)
+        self.progress_bar_step1 = tqdm(desc="Step 1 Progression", unit="positions", total=108_984, position=0)
 
         self.progress_bar_step2 = tqdm(desc="Step 2 Progression", unit="positions", total=3_719_282, position=0)
 
@@ -44,7 +44,7 @@ class RetroAnalysis:
         end = time.time()
         logging.error(f"Saving database : Database size : {len(game.search_strategy.parent_to_subpositions)}, "
                       f"New positions found : {len(game.search_strategy.parent_to_subpositions) - init_size} in {round(end - start, 3)}s")
-        game.search_strategy.save_database(game.filename)
+        #game.search_strategy.save_database(game.filename)
         logging.error("Database saved successfully")
 
     def get_player(self, game):
@@ -59,6 +59,36 @@ class RetroAnalysis:
             return 1
         return 0
 
+    def compute_symmetries(self, game):
+        initial_position = self.parent_to_subpositions[game.footprint]
+
+        # We also save the symmetrical positions
+        # 1.
+        new_board = [[game.board[x][game.N - 1 - y] for y in range(game.N)] for x in range(game.N)]
+        self.parent_to_subpositions[game.recompute_footprint(new_board)] = initial_position
+
+        new_board = [[game.board[game.N - 1 - y][x] for y in range(game.N)] for x in range(game.N)]
+        self.parent_to_subpositions[game.recompute_footprint(new_board)] = initial_position
+
+        # 2.
+        new_board = [[game.board[game.N - 1 - x][y] for y in range(game.N)] for x in range(game.N)]
+        self.parent_to_subpositions[game.recompute_footprint(new_board)] = initial_position
+
+        new_board = [[game.board[y][game.N - 1 - x] for y in range(game.N)] for x in range(game.N)]
+        self.parent_to_subpositions[game.recompute_footprint(new_board)] = initial_position
+
+        # 3. Diagonal (0, 0) stays in place
+        new_board = [[game.board[y][x] for y in range(game.N)] for x in range(game.N)]
+        self.parent_to_subpositions[game.recompute_footprint(new_board)] = initial_position
+
+        # 4.
+        new_board = [[game.board[game.N - 1 - y][game.N - 1 - x] for y in range(game.N)] for x in range(game.N)]
+        self.parent_to_subpositions[game.recompute_footprint(new_board)] = initial_position
+
+        new_board = [[game.board[game.N - 1 - x][game.N - 1 - y] for y in range(game.N)] for x in range(game.N)]
+        self.parent_to_subpositions[game.recompute_footprint(new_board)] = initial_position
+
+
     def step1(self, game, player):
         possible_moves = player.get_legal_moves(game)
 
@@ -72,14 +102,20 @@ class RetroAnalysis:
             parent[0].append(fen)
 
             if fen not in self.parent_to_subpositions:
-                self.progress_bar_step1.update(1)
 
                 evaluation = self.game_won(game)
                 if evaluation != 0:
+                    size_before = len(self.parent_to_subpositions)
                     self.parent_to_subpositions[fen] = ([], [initial_fen], (evaluation, 0))
+                    self.compute_symmetries(game)
+
+                    size_after = len(self.parent_to_subpositions)
+
+                    self.progress_bar_step1.update(size_after - size_before)
                 else:
                     # Position cannot be evaluated so far, we only store the parents
                     self.parent_to_subpositions[fen] = ([], [initial_fen], None)
+                    self.compute_symmetries(game)
 
                     # New position to explore
                     self.step1(game, self.get_player(game))
@@ -95,6 +131,7 @@ class RetroAnalysis:
         global_dtz = -1
 
         n_solved = len(queue)
+        print(f"Number of solved positions : {n_solved}")
         self.progress_bar_step2.update(n_solved)
 
         while queue:
@@ -130,7 +167,7 @@ class RetroAnalysis:
                     n_solved += 1
                     self.progress_bar_step2.update(1)
                 else:
-                    if len([p for p in self.parent_to_subpositions[parent][0] if self.parent_to_subpositions[p][2] is None]) == 0:
+                    if len([p for p in self.parent_to_subpositions[parent][0] if self.parent_to_subpositions[p][-1] is None]) == 0:
                         # All the subpositions are computed
                         evaluations = list(map(lambda son : self.parent_to_subpositions[son][-1],
                                                self.parent_to_subpositions[parent][0]))
@@ -150,6 +187,11 @@ class RetroAnalysis:
             # Optimisation : we can clear the parents
             self.parent_to_subpositions[position] = (None, None, (evaluation, dtz))
 
+##################################################
+####### STEP 3 : DROP DRAW POSITIONS #############
+##################################################
+    def step3(self):
+        pass
 
     def compute_best_eval_for_white(self, evaluations):
         best_eval, best_dtz = evaluations[0]
@@ -180,6 +222,7 @@ class RetroAnalysis:
             return best_eval, best_dtz - 1
         else:
             return best_eval, best_dtz + 1
+
 
 
     def save_database(self, filename):

@@ -59,10 +59,15 @@ using the **minimax algorithm**
 * Play a game using the database of solved positions which indicates which are the best moves
 
 
-## 🚀 Utilisation
+## 🚀 Usage
 
-- StrategetiTest solves the game using previously known positions in database.json. 
-Removing or cleaning the file starts the soling from scratch
+1. Install the needed packages with the following command :
+````commandline
+pip install -e .
+````
+2. Run StrategetiSolver.py.
+3. Take a ~25 minutes coffee break. The database.pkl file should be created
+4. Run PlayStrategeti.py.
 
 
 ## 📁 Project structure
@@ -107,9 +112,9 @@ projet/
 | Piece.py:73(cancel_move)                    |        4812599 |                             6.8% |
 
 ### Number of positions :
-| Board size | Number of pieces (E, G, L, Z) per player | Number of positions |
-|------------|-----------------------------------------:|--------------------:|
-| 3x3        |                           4 (1, 1, 1, 1) |           3 719 282 |
+| Board size | Number of pieces (E, G, L, Z) per player | Number of positions | Number of finished positions |
+|------------|-----------------------------------------:|--------------------:|-----------------------------:|
+| 3x3        |                           4 (1, 1, 1, 1) |           3 719 282 |                      108 984 |
 
 
 ## 📋 To-Do List & Future Improvements
