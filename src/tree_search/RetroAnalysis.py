@@ -6,9 +6,11 @@ import traceback
 
 from tqdm import tqdm
 
+from utils.Constants import NUMBER_STEPS
+
 
 class RetroAnalysis:
-    def __init__(self):
+    def __init__(self, game):
         # STEP 1 : Find all the terminated positions
         # Stores for each position, the list of its parents + its evaluation
 
@@ -21,6 +23,14 @@ class RetroAnalysis:
 
         self.step1_done = False
 
+        steps = NUMBER_STEPS.get((game.N, game.nb_pieces))
+        if steps is not None:
+            self.total_step1 = steps[0]
+            self.total_step2 = steps[1]
+        else:
+            self.total_step1 = None
+            self.total_step2 = None
+
     def start_search(self, game, player):
         exception = False
         total_time_start = time.time()
@@ -29,7 +39,8 @@ class RetroAnalysis:
             if not self.step1_done:
                 print(f"Step 1 starting with initial {len(self.parent_to_subpositions)} positions")
 
-                self.progress_bar_step1 = tqdm(desc="Step 1 Progression", unit="positions", total=3_719_282, position=0)
+                self.progress_bar_step1 = tqdm(desc="Step 1 Progression", unit="positions",
+                                               total=self.total_step1, position=0)
                 start = time.time()
                 self.step1(game, game.player1)
 
@@ -44,7 +55,8 @@ class RetroAnalysis:
             print(f"Step 2 starting")
             self.progress_bar_step1.close()
             time.sleep(0.01)
-            self.progress_bar_step2 = tqdm(desc="Step 2 Progression", unit="positions", total=3_577_213, position=0)
+            self.progress_bar_step2 = tqdm(desc="Step 2 Progression", unit="positions",
+                                           total=self.total_step2, position=0)
 
             start = time.time()
             self.step2()
@@ -132,10 +144,11 @@ class RetroAnalysis:
 
                 evaluation = self.game_won(game)
                 if evaluation != 0:
+                    initial_len = len(self.parent_to_subpositions)
                     self.parent_to_subpositions[fen] = ([], [initial_fen], self.compute_symmetries(game), (evaluation, 0))
+                    new_positions = len(self.parent_to_subpositions) - initial_len
 
-                    self.progress_bar_step1.n = len(self.parent_to_subpositions)
-                    self.progress_bar_step1.refresh()
+                    self.progress_bar_step1.update(new_positions)
                 else:
                     self.parent_to_subpositions[fen] = ([], [initial_fen], self.compute_symmetries(game), None)
 
@@ -166,16 +179,16 @@ class RetroAnalysis:
                 self.final_solve[sym] = (evaluation, dtz)
 
         global_dtz = 0
-
-        self.progress_bar_step2.update(len(queue))
+        initial_len = 0
 
         while super_queue[global_dtz]:
             queue = super_queue[global_dtz]
             self.progress_bar_step2.set_postfix(DTZ=f"{global_dtz}")
 
             while queue:
-                self.progress_bar_step2.n = len(self.final_solve)
-                self.progress_bar_step2.refresh()
+
+                self.progress_bar_step2.update(len(self.final_solve) - initial_len)
+                initial_len = len(self.final_solve)
 
                 if super_queue[-1]:
                     super_queue.extend([[] for _ in range(10)])

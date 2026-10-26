@@ -101,12 +101,18 @@ projet/
 | 26/10 |                   376 482 |          60.201 |                                           6 253 |                                                               |
 
 - ### 🔧 Function calls efficiency :
-| Function name                               | Number of call | Percentage of total running time |
-|---------------------------------------------|---------------:|---------------------------------:|
-| Strategeti.py:193(get_position_as_integer2) |        6569398 |                            14.1% |
-| Gazelle.py:9(get_legal_moves)               |        1532716 |                            13.5% |
-| Player.py:53(make_move)                     |         689728 |                             8.7% |
-| Piece.py:73(cancel_move)                    |        4812599 |                             6.8% |
+| Cumulative time (in seconds) |        Function name |
+|---------------:|----------------------------------------:|
+|        129.352 |                  Strategeti.py:46(play) |
+|        129.352 |       RetroAnalysis.py:34(start_search) |
+|        109.596 |             RetroAnalysis.py:131(step1) |
+|         37.854 | RetroAnalysis.py:94(compute_symmetries) |
+|         25.219 |            Strategeti.py:106(make_move) |
+|         20.432 |          Strategeti.py:126(cancel_move) |
+|         17.699 |             RetroAnalysis.py:170(step2) |
+|         13.993 |           Player.py:31(get_legal_moves) |
+|         13.722 |  Strategeti.py:182(recompute_footprint) |
+|         13.672 |                Piece.py:70(cancel_move) |
 
 ### Number of positions :
 | Board size | Number of pieces (E, G, L, Z) per player | Number of positions | Number of not draw positions | Number of finished positions |

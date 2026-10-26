@@ -23,6 +23,10 @@ MAPPING_PIECE_INSIDE_INTEGER = {
     " " : 4
 }
 
+NUMBER_STEPS = {
+    (3, 4) : (108_984, 3_577_213)
+}
+
 class Constants:
 
     def __init__(self, N):

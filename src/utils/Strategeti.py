@@ -36,10 +36,12 @@ class Strategeti:
         # We store the footprint to not recreating it from scratch at each move
         self.footprint = 0
 
-        self.search_strategy = RetroAnalysis()
+        self.search_strategy = RetroAnalysis(self)
 
         self.filename = f"../tests/database_{self.N}x{self.N}_{self.nb_pieces}_pieces.pkl"
         self.search_strategy.load_database(self.filename)
+
+        self.number_pieces = len(self.player1.pieces_to_be_placed)
 
     def play(self):
         if self.check_winner():
