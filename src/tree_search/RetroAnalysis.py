@@ -18,6 +18,8 @@ class RetroAnalysis:
 
         self.progress_bar_step2 = tqdm(desc="Step 2 Progression", unit="positions", total=3_719_282, position=0)
 
+        self.final_solve = {}
+
         self.step1_done = False
 
     def start_search(self, game, player):
@@ -28,10 +30,10 @@ class RetroAnalysis:
             if not self.step1_done:
                 print(f"Step 1 starting with initial {len(self.parent_to_subpositions)} positions")
                 self.step1(game, game.player1)
+                self.progress_bar_step1.refresh()
                 self.step1_done = True
                 end = time.time()
                 print(f"Step 1 completed : {len(self.parent_to_subpositions)} positions discovered in {end - start}s")
-                game.search_strategy.save_database(game.filename)
 
             self.progress_bar_step1.close()
             print(f"Step 2 starting")
@@ -44,7 +46,7 @@ class RetroAnalysis:
         end = time.time()
         logging.error(f"Saving database : Database size : {len(game.search_strategy.parent_to_subpositions)}, "
                       f"New positions found : {len(game.search_strategy.parent_to_subpositions) - init_size} in {round(end - start, 3)}s")
-        #game.search_strategy.save_database(game.filename)
+        game.search_strategy.save_database(game.filename)
         logging.error("Database saved successfully")
 
     def get_player(self, game):
@@ -60,33 +62,40 @@ class RetroAnalysis:
         return 0
 
     def compute_symmetries(self, game):
-        initial_position = self.parent_to_subpositions[game.footprint]
-
         # We also save the symmetrical positions
         # 1.
         new_board = [[game.board[x][game.N - 1 - y] for y in range(game.N)] for x in range(game.N)]
-        self.parent_to_subpositions[game.recompute_footprint(new_board)] = initial_position
+        s1 = game.recompute_footprint(new_board)
+        self.parent_to_subpositions[s1] = game.footprint
 
         new_board = [[game.board[game.N - 1 - y][x] for y in range(game.N)] for x in range(game.N)]
-        self.parent_to_subpositions[game.recompute_footprint(new_board)] = initial_position
+        s2 = game.recompute_footprint(new_board)
+        self.parent_to_subpositions[s2] = game.footprint
 
         # 2.
         new_board = [[game.board[game.N - 1 - x][y] for y in range(game.N)] for x in range(game.N)]
-        self.parent_to_subpositions[game.recompute_footprint(new_board)] = initial_position
+        s3 = game.recompute_footprint(new_board)
+        self.parent_to_subpositions[s3] = game.footprint
 
         new_board = [[game.board[y][game.N - 1 - x] for y in range(game.N)] for x in range(game.N)]
-        self.parent_to_subpositions[game.recompute_footprint(new_board)] = initial_position
+        s4 = game.recompute_footprint(new_board)
+        self.parent_to_subpositions[s4] = game.footprint
 
         # 3. Diagonal (0, 0) stays in place
         new_board = [[game.board[y][x] for y in range(game.N)] for x in range(game.N)]
-        self.parent_to_subpositions[game.recompute_footprint(new_board)] = initial_position
+        s5 = game.recompute_footprint(new_board)
+        self.parent_to_subpositions[s5] = game.footprint
 
         # 4.
         new_board = [[game.board[game.N - 1 - y][game.N - 1 - x] for y in range(game.N)] for x in range(game.N)]
-        self.parent_to_subpositions[game.recompute_footprint(new_board)] = initial_position
+        s6 = game.recompute_footprint(new_board)
+        self.parent_to_subpositions[s6] = game.footprint
 
         new_board = [[game.board[game.N - 1 - x][game.N - 1 - y] for y in range(game.N)] for x in range(game.N)]
-        self.parent_to_subpositions[game.recompute_footprint(new_board)] = initial_position
+        s7 = game.recompute_footprint(new_board)
+        self.parent_to_subpositions[s7] = game.footprint
+
+        return {s1, s2, s3, s4, s5, s6, s7}
 
 
     def step1(self, game, player):
@@ -106,86 +115,132 @@ class RetroAnalysis:
                 evaluation = self.game_won(game)
                 if evaluation != 0:
                     size_before = len(self.parent_to_subpositions)
-                    self.parent_to_subpositions[fen] = ([], [initial_fen], (evaluation, 0))
-                    self.compute_symmetries(game)
+
+                    # We cannot store the symmetries because we want to have one object for all
+                    self.parent_to_subpositions[fen] = ([], [initial_fen], self.compute_symmetries(game), (evaluation, 0))
 
                     size_after = len(self.parent_to_subpositions)
 
                     self.progress_bar_step1.update(size_after - size_before)
                 else:
                     # Position cannot be evaluated so far, we only store the parents
-                    self.parent_to_subpositions[fen] = ([], [initial_fen], None)
-                    self.compute_symmetries(game)
+                    self.parent_to_subpositions[fen] = ([], [initial_fen], self.compute_symmetries(game), None)
 
                     # New position to explore
                     self.step1(game, self.get_player(game))
             else:
-                self.parent_to_subpositions[fen][1].append(initial_fen)
+                representative = self.parent_to_subpositions[fen]
+                representative = self.parent_to_subpositions[representative] if isinstance(representative, int) else representative
+
+                if initial_fen not in representative[1]:
+                    representative[1].append(initial_fen)
 
             game.cancel_move()
 
     # STEP 2
+    def compute_queue(self):
+        pass
+
     def step2(self):
+
         queue : list[int, int, int] = [(key, *pos[-1]) for key, pos in self.parent_to_subpositions.items()
-                                       if pos[-1] is not None]
-        global_dtz = -1
+                                       if isinstance(pos, tuple) and pos[-1] is not None]
+        super_queue = [queue]
+
+        for fen, evaluation, dtz in queue:
+            self.final_solve[fen] = (evaluation, dtz)
+            for sym in self.parent_to_subpositions[fen][2]:
+                self.final_solve[sym] = (evaluation, dtz)
+
+        global_dtz = 0
 
         n_solved = len(queue)
         print(f"Number of solved positions : {n_solved}")
         self.progress_bar_step2.update(n_solved)
 
-        while queue:
-            position, evaluation, dtz = queue.pop(0)
+        while super_queue[global_dtz]:
+            queue = super_queue[global_dtz]
+            print(f"Next DTZ : {abs(global_dtz)}")
+            while queue:
+                for i in range(global_dtz):
+                    assert super_queue[i] == []
+                if super_queue[-1]:
+                    super_queue.extend([[] for _ in range(10)])
 
-            if global_dtz < abs(dtz):
-                print(f"Next distance to 0 : {abs(dtz)}")
-                global_dtz = abs(dtz)
+                position, evaluation, dtz = queue.pop(0)
 
-            parents = self.parent_to_subpositions[position][1]
+                parents = self.parent_to_subpositions[position][1]
 
-            for parent in parents:
-                if self.parent_to_subpositions[parent][-1] is not None:
-                    # Position already solved
-                    continue
+                for parent in parents:
+                    if parent in self.final_solve:
+                        # Position already solved
+                        continue
 
-                if evaluation > 0 and parent % 2 == 0:
-                    # parent is winning for white
-                    sons, p, _ = self.parent_to_subpositions[parent]
-                    self.parent_to_subpositions[parent] = (sons, p, (evaluation, dtz + 1))
+                    value = self.parent_to_subpositions[parent]
 
-                    queue.append((parent, evaluation, dtz + 1))
+                    representative = parent if isinstance(value, tuple) else value
 
-                    n_solved += 1
-                    self.progress_bar_step2.update(1)
-                elif evaluation < 0 and parent % 2 == 1:
-                    # parent is winning for black
-                    sons, p, _ = self.parent_to_subpositions[parent]
-                    self.parent_to_subpositions[parent] = (sons, p, (evaluation, dtz - 1))
+                    if not self.compute_straightly_winning(representative, evaluation, dtz, super_queue):
+                        self.compute_with_all_subpositions(representative, super_queue)
 
-                    queue.append((parent, evaluation, dtz - 1))
+                # Optimisation : we can clear the parents
+                self.parent_to_subpositions.pop(position)
 
-                    n_solved += 1
-                    self.progress_bar_step2.update(1)
-                else:
-                    if len([p for p in self.parent_to_subpositions[parent][0] if self.parent_to_subpositions[p][-1] is None]) == 0:
-                        # All the subpositions are computed
-                        evaluations = list(map(lambda son : self.parent_to_subpositions[son][-1],
-                                               self.parent_to_subpositions[parent][0]))
+            global_dtz += 1
 
-                        if parent % 2 == 0:
-                            new_eval = self.compute_best_eval_for_white(evaluations)
-                        else:
-                            new_eval = self.compute_best_eval_for_black(evaluations)
+    def compute_straightly_winning(self, representative, evaluation, dtz, super_queue):
+        if evaluation > 0 and representative % 2 == 0:
+            # parent is winning for white
+            sons, p, syms, _ = self.parent_to_subpositions[representative]
 
-                        sons, p, _ = self.parent_to_subpositions[parent]
-                        self.parent_to_subpositions[parent] = (sons, p, new_eval)
-                        queue.append((parent, *new_eval))
+            self.parent_to_subpositions[representative] = (sons, p, syms, (evaluation, dtz + 1))
 
-                        n_solved += 1
-                        self.progress_bar_step2.update(1)
+            self.final_solve[representative] = (evaluation, dtz + 1)
+            for sym in self.parent_to_subpositions[representative][2]:
+                # To be stored only once
+                self.final_solve[sym] = (evaluation, dtz + 1)
 
-            # Optimisation : we can clear the parents
-            self.parent_to_subpositions[position] = (None, None, (evaluation, dtz))
+            super_queue[dtz + 1].append((representative, evaluation, dtz + 1))
+
+            self.progress_bar_step2.update(1)
+            return True
+
+        elif evaluation < 0 and representative % 2 == 1:
+            # parent is winning for black
+            sons, p, syms, _ = self.parent_to_subpositions[representative]
+            self.parent_to_subpositions[representative] = (sons, p, syms, (evaluation, dtz - 1))
+
+            self.final_solve[representative] = (evaluation, dtz - 1)
+            for sym in self.parent_to_subpositions[representative][2]:
+                # To be stored only once
+                self.final_solve[sym] = (evaluation, dtz - 1)
+
+            super_queue[abs(dtz) + 1].append((representative, evaluation, dtz - 1))
+            self.progress_bar_step2.update(1)
+            return True
+        return False
+
+    def compute_with_all_subpositions(self, representative, super_queue):
+        if len([p for p in self.parent_to_subpositions[representative][0] if p not in self.final_solve]) == 0:
+            # All the subpositions are computed
+            evaluations = list(map(lambda son: self.final_solve[son],
+                                   self.parent_to_subpositions[representative][0]))
+            if representative % 2 == 0:
+                new_eval, new_dtz = self.compute_best_eval_for_white(evaluations)
+            else:
+                new_eval, new_dtz = self.compute_best_eval_for_black(evaluations)
+
+            sons, p, syms, _ = self.parent_to_subpositions[representative]
+            self.parent_to_subpositions[representative] = (sons, p, syms, (new_eval, new_dtz))
+
+            self.final_solve[representative] = new_eval, new_dtz
+            for sym in self.parent_to_subpositions[representative][2]:
+                # To be stored only once -> mapping to integer
+                self.final_solve[sym] = new_eval, new_dtz
+
+            super_queue[abs(new_dtz)].append((representative, new_eval, new_dtz))
+
+            self.progress_bar_step2.update(1)
 
 ##################################################
 ####### STEP 3 : DROP DRAW POSITIONS #############
@@ -227,13 +282,13 @@ class RetroAnalysis:
 
     def save_database(self, filename):
         with open(filename, "wb") as f:
-            pickle.dump((self.parent_to_subpositions, self.step1_done), f, protocol=pickle.HIGHEST_PROTOCOL)
+            pickle.dump((self.parent_to_subpositions, self.final_solve, self.step1_done), f, protocol=pickle.HIGHEST_PROTOCOL)
 
     def load_database(self, filename):
         if os.path.exists(filename):
             with open(filename, "rb") as f:
                 logging.error("Loading database...")
-                self.parent_to_subpositions, self.step1_done = pickle.load(f)
+                self.parent_to_subpositions, self.final_solve, self.step1_done = pickle.load(f)
                 # self.progress_bar_step1.update(len(self.parent_to_subpositions))
                 init_size = len(self.parent_to_subpositions)
                 logging.error(f"Database of {init_size} elements successfully loaded")
