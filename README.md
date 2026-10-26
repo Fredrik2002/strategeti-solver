@@ -65,9 +65,8 @@ using the **minimax algorithm**
 ````commandline
 pip install -e .
 ````
-2. Run StrategetiSolver.py.
-3. Take a ~25 minutes coffee break. The database.pkl file should be created
-4. Run PlayStrategeti.py.
+2. Run StrategetiSolver.py. The database.pkl file should be created
+3. Run PlayStrategeti.py.
 
 
 ## 📁 Project structure
@@ -99,9 +98,7 @@ projet/
 - ### 🌳 Tree search global efficiency :
 | Date  | Number of position solved | Duration (in s) | Ratio (avg number of position solved per second | Improvements                                                  |
 |-------|--------------------------:|----------------:|------------------------------------------------:|---------------------------------------------------------------|
-| 29/09 |                   376 482 |          60.201 |                                           6 253 |                                                               |
-| 30/09 |                   502 941 |          60.758 |                                           8 277 | Modify the FEN on the fly for 'Move'                          |
-| 30/09 |                   567 780 |          60.160 |                                           9 437 | Modify the FEN on the fly for 'Place & new gazelle movements' |
+| 26/10 |                   376 482 |          60.201 |                                           6 253 |                                                               |
 
 - ### 🔧 Function calls efficiency :
 | Function name                               | Number of call | Percentage of total running time |
@@ -112,9 +109,9 @@ projet/
 | Piece.py:73(cancel_move)                    |        4812599 |                             6.8% |
 
 ### Number of positions :
-| Board size | Number of pieces (E, G, L, Z) per player | Number of positions | Number of finished positions |
-|------------|-----------------------------------------:|--------------------:|-----------------------------:|
-| 3x3        |                           4 (1, 1, 1, 1) |           3 719 282 |                      108 984 |
+| Board size | Number of pieces (E, G, L, Z) per player | Number of positions | Number of not draw positions | Number of finished positions |
+|------------|-----------------------------------------:|--------------------:|-----------------------------:|-----------------------------:|
+| 3x3        |                           4 (1, 1, 1, 1) |           3 719 282 |                    3 577 213 |                      108 984 |
 
 
 ## 📋 To-Do List & Future Improvements

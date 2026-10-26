@@ -10,44 +10,62 @@ from tqdm import tqdm
 class RetroAnalysis:
     def __init__(self):
         # STEP 1 : Find all the terminated positions
-
         # Stores for each position, the list of its parents + its evaluation
+
         self.parent_to_subpositions : dict[int, tuple[list[int], list[int], tuple[int, int]]] = {0 : ([], [], [], None)}
 
-        self.progress_bar_step1 = tqdm(desc="Step 1 Progression", unit="positions", total=108_984, position=0)
-
-        self.progress_bar_step2 = tqdm(desc="Step 2 Progression", unit="positions", total=3_719_282, position=0)
+        self.progress_bar_step1 = tqdm(desc="Step 1 Progression", unit="positions", total=108_984, position=0, disable=True)
+        self.progress_bar_step2 = tqdm(desc="Step 2 Progression", unit="positions", total=108_984, position=0, disable=True)
 
         self.final_solve = {}
 
         self.step1_done = False
 
     def start_search(self, game, player):
-        init_size = len(self.parent_to_subpositions)
-        start = time.time()
+        exception = False
+        total_time_start = time.time()
         try:
             print(f"Starting the search : Step 1 : {self.step1_done}")
             if not self.step1_done:
                 print(f"Step 1 starting with initial {len(self.parent_to_subpositions)} positions")
+
+                self.progress_bar_step1 = tqdm(desc="Step 1 Progression", unit="positions", total=3_719_282, position=0)
+                start = time.time()
                 self.step1(game, game.player1)
+
+                # Last refresh to make sure we reach 100%
+                self.progress_bar_step1.n = len(self.parent_to_subpositions)
                 self.progress_bar_step1.refresh()
+
                 self.step1_done = True
                 end = time.time()
-                print(f"Step 1 completed : {len(self.parent_to_subpositions)} positions discovered in {end - start}s")
+                print(f"Step 1 completed in {end - start}s: {len(self.parent_to_subpositions)} positions discovered ")
 
-            self.progress_bar_step1.close()
             print(f"Step 2 starting")
+            self.progress_bar_step1.close()
+            time.sleep(0.01)
+            self.progress_bar_step2 = tqdm(desc="Step 2 Progression", unit="positions", total=3_577_213, position=0)
+
+            start = time.time()
             self.step2()
+            self.progress_bar_step2.close()
+            end = time.time()
+
+            print(f"Step 2 completed in {end - start}s: solved {len(self.final_solve)} positions ")
+            self.step3()
         except (Exception, KeyboardInterrupt) as e:
 
+            exception = True
+
             # 4. We save the database state before quitting
-            logging.error(traceback.format_exc())
+            logging.info(traceback.format_exc())
 
         end = time.time()
-        logging.error(f"Saving database : Database size : {len(game.search_strategy.parent_to_subpositions)}, "
-                      f"New positions found : {len(game.search_strategy.parent_to_subpositions) - init_size} in {round(end - start, 3)}s")
+        if exception:
+            logging.info(f"Solving interrupted after {round(end - total_time_start, 3)}s")
+        else:
+            logging.info(f"Solving completed after {round(end - total_time_start, 3)}s")
         game.search_strategy.save_database(game.filename)
-        logging.error("Database saved successfully")
 
     def get_player(self, game):
         return game.player1 if game.white_to_move else game.player2
@@ -114,16 +132,11 @@ class RetroAnalysis:
 
                 evaluation = self.game_won(game)
                 if evaluation != 0:
-                    size_before = len(self.parent_to_subpositions)
-
-                    # We cannot store the symmetries because we want to have one object for all
                     self.parent_to_subpositions[fen] = ([], [initial_fen], self.compute_symmetries(game), (evaluation, 0))
 
-                    size_after = len(self.parent_to_subpositions)
-
-                    self.progress_bar_step1.update(size_after - size_before)
+                    self.progress_bar_step1.n = len(self.parent_to_subpositions)
+                    self.progress_bar_step1.refresh()
                 else:
-                    # Position cannot be evaluated so far, we only store the parents
                     self.parent_to_subpositions[fen] = ([], [initial_fen], self.compute_symmetries(game), None)
 
                     # New position to explore
@@ -154,16 +167,16 @@ class RetroAnalysis:
 
         global_dtz = 0
 
-        n_solved = len(queue)
-        print(f"Number of solved positions : {n_solved}")
-        self.progress_bar_step2.update(n_solved)
+        self.progress_bar_step2.update(len(queue))
 
         while super_queue[global_dtz]:
             queue = super_queue[global_dtz]
-            print(f"Next DTZ : {abs(global_dtz)}")
+            self.progress_bar_step2.set_postfix(DTZ=f"{global_dtz}")
+
             while queue:
-                for i in range(global_dtz):
-                    assert super_queue[i] == []
+                self.progress_bar_step2.n = len(self.final_solve)
+                self.progress_bar_step2.refresh()
+
                 if super_queue[-1]:
                     super_queue.extend([[] for _ in range(10)])
 
@@ -181,7 +194,7 @@ class RetroAnalysis:
                     representative = parent if isinstance(value, tuple) else value
 
                     if not self.compute_straightly_winning(representative, evaluation, dtz, super_queue):
-                        self.compute_with_all_subpositions(representative, super_queue)
+                        self.compute_with_all_subpositions(representative, super_queue, dtz)
 
                 # Optimisation : we can clear the parents
                 self.parent_to_subpositions.pop(position)
@@ -201,8 +214,6 @@ class RetroAnalysis:
                 self.final_solve[sym] = (evaluation, dtz + 1)
 
             super_queue[dtz + 1].append((representative, evaluation, dtz + 1))
-
-            self.progress_bar_step2.update(1)
             return True
 
         elif evaluation < 0 and representative % 2 == 1:
@@ -216,11 +227,10 @@ class RetroAnalysis:
                 self.final_solve[sym] = (evaluation, dtz - 1)
 
             super_queue[abs(dtz) + 1].append((representative, evaluation, dtz - 1))
-            self.progress_bar_step2.update(1)
             return True
         return False
 
-    def compute_with_all_subpositions(self, representative, super_queue):
+    def compute_with_all_subpositions(self, representative, super_queue, dtz):
         if len([p for p in self.parent_to_subpositions[representative][0] if p not in self.final_solve]) == 0:
             # All the subpositions are computed
             evaluations = list(map(lambda son: self.final_solve[son],
@@ -240,13 +250,11 @@ class RetroAnalysis:
 
             super_queue[abs(new_dtz)].append((representative, new_eval, new_dtz))
 
-            self.progress_bar_step2.update(1)
-
 ##################################################
 ####### STEP 3 : DROP DRAW POSITIONS #############
 ##################################################
     def step3(self):
-        pass
+        self.parent_to_subpositions = None
 
     def compute_best_eval_for_white(self, evaluations):
         best_eval, best_dtz = evaluations[0]
@@ -270,7 +278,7 @@ class RetroAnalysis:
                 best_eval, best_dtz = evaluation, dtz
             elif best_eval == 1 and evaluation == 1 and dtz > best_dtz:
                 best_eval, best_dtz = evaluation, dtz
-            elif evaluation == -1 and best_eval == +1:
+            elif evaluation == -1 and best_eval == + 1:
                 best_eval, best_dtz = evaluation, dtz
 
         if best_eval < 0:
@@ -281,22 +289,22 @@ class RetroAnalysis:
 
 
     def save_database(self, filename):
+        logging.error(f"Saving database at {filename}. Please wait...")
         with open(filename, "wb") as f:
             pickle.dump((self.parent_to_subpositions, self.final_solve, self.step1_done), f, protocol=pickle.HIGHEST_PROTOCOL)
+
+        db_size_in_bytes = os.path.getsize(filename)
+        db_size_in_bytes /= (1024 ** 2)
+        db_size_in_bytes = round(db_size_in_bytes, 2)
+        logging.info(f"Saved database. Size : {db_size_in_bytes}MB")
 
     def load_database(self, filename):
         if os.path.exists(filename):
             with open(filename, "rb") as f:
-                logging.error("Loading database...")
+                logging.info("Loading database...")
                 self.parent_to_subpositions, self.final_solve, self.step1_done = pickle.load(f)
-                # self.progress_bar_step1.update(len(self.parent_to_subpositions))
-                init_size = len(self.parent_to_subpositions)
-                logging.error(f"Database of {init_size} elements successfully loaded")
+                logging.info(f"Database successfully loaded")
         else:
-            logging.error(f"Cannot find database at {filename}. Restarting the solving from scratch.")
-
-
-
-
+            logging.info(f"Cannot find database at {filename}. Restarting the solving from scratch.")
 
 
