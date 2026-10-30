@@ -41,9 +41,11 @@ while True:
     while not player_choice.isdigit() or int(player_choice) >= len(available_moves):
         player_choice = input()
     player_choice = int(player_choice)
+    print("Played:"+str(sorted_moves[player_choice][0]))
     game.make_move(sorted_moves[player_choice][0])
-    game.show_board()
+    game.show_board()    
     if game.check_winner():
-        print("Game is finished")
+        Winner = "Black" if game.white_to_move else "White"
+        print(Winner+" won")
         break
 
