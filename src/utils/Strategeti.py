@@ -3,15 +3,16 @@ import os
 
 from src.pieces.EmptySquare import EmptySquare
 from src.tree_search.CompleteSearch import CompleteSearch
-from src.tree_search.RetroAnalysis import RetroAnalysis
+import src.tree_search.RetroAnalysis
 from src.utils import Player
 from src.pieces.Piece import Piece
 from src.utils.Constants import Constants
 from src.utils.PositionStorage import PositionStorage
+from utils.Constants import MAPPING_INTEGER_PIECE
 
 
 class Strategeti:
-    def __init__(self, N):
+    def __init__(self, N, search=True):
         self.N = N
 
         # We compute all the constants we will need
@@ -36,10 +37,11 @@ class Strategeti:
         # We store the footprint to not recreating it from scratch at each move
         self.footprint = 0
 
-        self.search_strategy = RetroAnalysis(self)
+        if search:
+            self.search_strategy = src.tree_search.RetroAnalysis.RetroAnalysis(self)
 
-        self.filename = f"../tests/database_{self.N}x{self.N}_{self.nb_pieces}_pieces.pkl"
-        self.search_strategy.load_database(self.filename)
+            self.filename = f"../tests/database_{self.N}x{self.N}_{self.nb_pieces}_pieces.pkl"
+            self.search_strategy.load_database(self.filename)
 
         self.number_pieces = len(self.player1.pieces_to_be_placed)
 
@@ -109,10 +111,6 @@ class Strategeti:
         if move[0] == "Place":
             piece.player.pieces_placed.add(move[-1])
             piece.player.pieces_to_be_placed.discard(move[-1])
-
-            if not any(x.piece_id == piece.piece_id for x in piece.player.pieces_to_be_placed):
-                piece.player.set_pieces_to_be_placed = set(filter(lambda x : x.piece_id != piece.piece_id,
-                                                                  piece.player.set_pieces_to_be_placed))
 
         piece.make_move(self, move)
 
@@ -198,6 +196,48 @@ class Strategeti:
         # We simply copy the captured pieces information, and the player's turn
         result |= self.footprint & self.constants.CAPTURED_PIECES_BITS
         return result
+
+    def reconstruct_from_footprint(self, fen):
+        self.pieces_moved.append([])
+        self.white_to_move = ((fen % 2) == 0)
+
+        for x in range(self.N):
+            for y in range(self.N):
+                piece_id = (fen >> ((x * self.N + y) * 4 + 1)) & 0b1111
+                piece_str = MAPPING_INTEGER_PIECE[piece_id]
+                if piece_str == " ":
+                    continue
+                elif piece_str.islower():
+                    piece = self.player2.get_free_piece_with_str(piece_str)
+
+                    self.player2.pieces_to_be_placed.discard(piece)
+                    self.player2.pieces_placed.add(piece)
+
+                else:
+                    piece = self.player1.get_free_piece_with_str(piece_str)
+
+                    self.player1.pieces_to_be_placed.discard(piece)
+                    self.player1.pieces_placed.add(piece)
+
+                piece.set_coords_and_game(x, y, self)
+
+        for piece_str, bit_shift in self.constants.FOOTPRINT_BIT_SHIFT.items():
+            nb_captured = (fen >> bit_shift) & 0b11
+            for i in range(nb_captured):
+                if piece_str.islower():
+                    piece = self.player2.get_free_piece_with_str(piece_str)
+
+                    self.player2.pieces_to_be_placed.remove(piece)
+                    self.player2.pieces_captured.add(piece)
+                else:
+                    piece = self.player1.get_free_piece_with_str(piece_str)
+
+                    self.player1.pieces_to_be_placed.remove(piece)
+                    self.player1.pieces_captured.add(piece)
+                piece.set_captured(self)
+
+        self.footprint = fen
+
 
     def safety(self):
         assert self.footprint == self.recompute_footprint(self.board)

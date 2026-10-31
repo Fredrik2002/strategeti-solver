@@ -22,8 +22,6 @@ class Player:
             # Gazelle(self, game),
         }
 
-        self.set_pieces_to_be_placed = self.piece_set()
-
         self.pieces_placed = set()
 
         self.pieces_captured = set()
@@ -34,7 +32,7 @@ class Player:
         for x, y in game.constants.SQUARES_INDICES_NO_CORNER:
             # Rules don't allow piece placement in the corners
             if game.board[x][y] is game.empty_square:
-                for piece in self.set_pieces_to_be_placed:
+                for piece in self.piece_set():
                     list_possible_moves.append(("Place", x, y, piece))
 
         for piece in self.pieces_placed:
@@ -59,6 +57,12 @@ class Player:
         for p in self.pieces_to_be_placed | self.pieces_placed | self.pieces_captured:
             if p.__class__ == piece.__class__:
                 return p
+
+    def get_free_piece_with_str(self, piece):
+        for p in self.pieces_to_be_placed:
+            if p.__str__() == piece:
+                return p
+        return None
 
     def get_captured_pieces(self):
         return self.pieces_captured

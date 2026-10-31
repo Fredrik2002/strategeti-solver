@@ -11,6 +11,8 @@ MAPPING_PIECE_INTEGER = {
     " " : 0
 }
 
+MAPPING_INTEGER_PIECE = [" ", "G", "L", "Z", "e", "g", "l", "z", "E"]
+
 MAPPING_PIECE_INSIDE_INTEGER = {
     "E" : 0,
     "G" : 1,
@@ -26,6 +28,12 @@ MAPPING_PIECE_INSIDE_INTEGER = {
 NUMBER_STEPS = {
     (3, 4) : (108_984, 3_577_213)
 }
+
+def equality_list_moves(L1, L2):
+    L1_str = [x.__str__() for x in L1]
+    L2_str = [x.__str__() for x in L2]
+
+    return set(L1_str) == set(L2_str)
 
 class Constants:
 

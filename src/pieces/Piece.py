@@ -74,11 +74,8 @@ class Piece(ABC):
         # Past position was off the board : The piece has been placed
         if (x, y) == (-1,-1):
             # The piece was just placed on the board
-            self.player.pieces_placed.discard(self)
+            self.player.pieces_placed.remove(self)
             self.player.pieces_to_be_placed.add(self)
-
-            if not any(p.piece_id == self.piece_id for p in self.player.set_pieces_to_be_placed):
-                self.player.set_pieces_to_be_placed.add(self)
 
             # We cancel the placement of the piece
             game.clear_piece_on_board(self.x, self.y)
@@ -87,7 +84,7 @@ class Piece(ABC):
         elif (self.x, self.y) == (-1, -1):
             assert self.is_captured
 
-            self.player.pieces_captured.discard(self)
+            self.player.pieces_captured.remove(self)
             self.player.pieces_placed.add(self)
             self.is_captured = False
 

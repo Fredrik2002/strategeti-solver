@@ -3,10 +3,12 @@ import os
 import pickle
 import time
 import traceback
+import utils.Strategeti
 
 from tqdm import tqdm
 
-from utils.Constants import NUMBER_STEPS
+from utils import Strategeti
+from utils.Constants import NUMBER_STEPS, equality_list_moves
 
 
 class RetroAnalysis:
@@ -59,15 +61,16 @@ class RetroAnalysis:
                                            total=self.total_step2, position=0)
 
             start = time.time()
-            self.step2()
-            self.progress_bar_step2.close()
-            end = time.time()
-
-            print(f"Step 2 completed in {end - start}s: solved {len(self.final_solve)} positions ")
-            self.step3()
+            # self.step2()
+            # self.progress_bar_step2.close()
+            # end = time.time()
+            #
+            # print(f"Step 2 completed in {end - start}s: solved {len(self.final_solve)} positions ")
+            # self.step3()
         except (Exception, KeyboardInterrupt) as e:
 
             exception = True
+            logging.info("Exception catched. Interrupting...")
 
             # 4. We save the database state before quitting
             logging.info(traceback.format_exc())
@@ -131,26 +134,33 @@ class RetroAnalysis:
     def step1(self, game, player):
         possible_moves = player.get_legal_moves(game)
 
+        game.safety()
         initial_fen = game.get_footprint()
-        parent = self.parent_to_subpositions[initial_fen]
+        game.safety()
+
+        game2 = Strategeti.Strategeti(game.N, search=False)
+        game2.reconstruct_from_footprint(game.footprint)
+        possible_moves2 = game2.player1.get_legal_moves(game2) if game2.white_to_move else game2.player2.get_legal_moves(game2)
+        assert equality_list_moves(possible_moves, possible_moves2)
+        assert game.footprint == game2.recompute_footprint(game2.board), (game.footprint,
+                                                                          game2.recompute_footprint(game2.board))
 
         for i, move in enumerate(possible_moves):
             game.make_move(move)
 
             fen = game.get_footprint()
-            parent[0].append(fen)
 
             if fen not in self.parent_to_subpositions:
 
                 evaluation = self.game_won(game)
                 if evaluation != 0:
                     initial_len = len(self.parent_to_subpositions)
-                    self.parent_to_subpositions[fen] = ([], [initial_fen], self.compute_symmetries(game), (evaluation, 0))
+                    self.parent_to_subpositions[fen] = ([initial_fen], self.compute_symmetries(game), (evaluation, 0))
                     new_positions = len(self.parent_to_subpositions) - initial_len
 
                     self.progress_bar_step1.update(new_positions)
                 else:
-                    self.parent_to_subpositions[fen] = ([], [initial_fen], self.compute_symmetries(game), None)
+                    self.parent_to_subpositions[fen] = ([initial_fen], self.compute_symmetries(game), None)
 
                     # New position to explore
                     self.step1(game, self.get_player(game))
@@ -158,10 +168,12 @@ class RetroAnalysis:
                 representative = self.parent_to_subpositions[fen]
                 representative = self.parent_to_subpositions[representative] if isinstance(representative, int) else representative
 
-                if initial_fen not in representative[1]:
-                    representative[1].append(initial_fen)
+                if initial_fen not in representative[0]:
+                    representative[0].append(initial_fen)
 
+            game.safety()
             game.cancel_move()
+            game.safety()
 
     # STEP 2
     def compute_queue(self):
@@ -244,6 +256,7 @@ class RetroAnalysis:
         return False
 
     def compute_with_all_subpositions(self, representative, super_queue, dtz):
+        return False
         if len([p for p in self.parent_to_subpositions[representative][0] if p not in self.final_solve]) == 0:
             # All the subpositions are computed
             evaluations = list(map(lambda son: self.final_solve[son],
@@ -316,7 +329,7 @@ class RetroAnalysis:
             with open(filename, "rb") as f:
                 logging.info("Loading database...")
                 self.parent_to_subpositions, self.final_solve, self.step1_done = pickle.load(f)
-                logging.info(f"Database successfully loaded")
+                logging.info("Database successfully loaded")
         else:
             logging.info(f"Cannot find database at {filename}. Restarting the solving from scratch.")
 
